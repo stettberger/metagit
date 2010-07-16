@@ -6,11 +6,14 @@ peer_repos = []
 peer_repos.append(Repository("peer.zerties.org:metagit", "~/metagit"))
 peer_repos.append(Repository("peer.zerties.org:config", "~/"))
 
+# To import a SVN Repository with git svn just use SVNRepository, instead of Repository
+# peer_repos.append(SVNRepository("file:///tmp/svn/fooo", "/tmp/testerl"))
 
 uni_repos = []
 uni_repos.extend(SSHDir("qy03fugy@cip", "u").into("~/uni/"))
 
 r = RepoManager()
+
 r.add_set("uni", uni_repos)
 r.add_set("peer", peer_repos)
 r.add_set("github", Github("stettberger").into("~/github"))

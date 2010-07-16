@@ -9,6 +9,7 @@ import urllib2
 from xml.dom.minidom import parse as xml_parse
 
 class Repository:
+    aliases = {}
     clone_url = None
     local_url = None
 
@@ -68,9 +69,10 @@ class Repository:
         return " ".join(self.git_options[command])
 
     def git_clone(self):
-        return "git clone %s %s %s" % (self.git_option("clone"),
-                                       self.clone_url,
-                                       self.local_url)
+        return "git %s %s %s %s" % (self.git_alias("clone"),
+                                    self.git_option("clone"),
+                                    self.clone_url,
+                                    self.local_url)
 
     def get_state(self):
         if os.path.exists(self.local_url + "/.git"):
@@ -80,6 +82,15 @@ class Repository:
         else:
             return "-"
 
+    def git_alias(self, command):
+        if command in self.aliases:
+            return self.aliases[command]
+        return command
+
+class SVNRepository(Repository):
+    aliases = {"push": "svn dcommit",
+               "clone": "svn clone",
+               "pull": "svn rebase"}
 
 class SSHDir:
     clone_urls = None
@@ -226,7 +237,7 @@ class RepoManager:
             if not os.path.exists(repo.local_url + "/.git"):
                 continue
             os.chdir(repo.local_url)
-            command = "git " + args[1] + " " + (" ".join(repo.git_option(args[1]))) + " " + " ".join(args[2:])
+            command = "git " + repo.git_alias(args[1]) + " " + (" ".join(repo.git_option(args[1]))) + " " + " ".join(args[2:])
             print "cd %s; %s"%(repo.local_url, command)
             a = subprocess.Popen(command, shell = True)
             a.wait()
