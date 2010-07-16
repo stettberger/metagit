@@ -33,6 +33,9 @@ class Repository:
             if local_url[-1] == '/':
                 local_url = local_url[0:-1]
             self.local_url = local_url
+
+        self.local_url = os.path.expanduser(self.local_url)
+
         self.policies += [(default_policy, ".*")]
         
     def add_policy(self, regexp, policy = "allow"):
