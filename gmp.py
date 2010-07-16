@@ -131,15 +131,21 @@ class RepoManager:
 
     def __init__(self):
         self.hostname = getfqdn()
+        self.commands = {"list": self.list,
+                         "clone": self.clone,
+                         "foreach": self.foreach,
+                         "status" : self.shortcut("status"),
+                         "push" : self.shortcut("push"),
+                         "pull" : self.shortcut("pull"),
+                         "fetch" : self.shortcut("fetch")}
+
+    
 
     def __call__(self):
         args = sys.argv[1:]
         if len(args) < 1:
             self.die("Too less arguments")
-        self.commands = {"list": self.list,
-                    "clone": self.clone,
-                    "foreach": self.foreach,
-                    "status" : self.shortcut("status")}
+
         if args[0] in self.commands:
             self.commands[args[0]](args[1:])
         else:
