@@ -157,24 +157,20 @@ class Github:
             self.clone_urls.append(url)
     def into(self, local_directory):
         return [Repository(url, into = local_directory) for url in self.urls()]
-        
-            
-                
-
-
 
 class RepoManager:
     sets = {}
 
     def __init__(self):
         self.hostname = getfqdn()
-        self.commands = {"list": self.list,
-                         "clone": self.clone,
-                         "foreach": self.foreach,
+        self.commands = {"list": self.cmd_list,
+                         "clone": self.cmd_clone,
+                         "foreach": self.cmd_foreach,
                          "status" : self.shortcut("status"),
                          "push" : self.shortcut("push"),
                          "pull" : self.shortcut("pull"),
-                         "fetch" : self.shortcut("fetch")}
+                         "fetch" : self.shortcut("fetch"),
+                         "sets"  : self.cmd_sets}
 
     
 
@@ -211,14 +207,14 @@ class RepoManager:
                     repos.append(repo)
         return repos
     
-    def list(self, selector):
+    def cmd_list(self, selector):
         if len(selector) == 0:
             selector = ["all"]
         repos = self._select(selector[0])
         for repo in repos:
             print(repo.get_state() + " " + repo.clone_url + " --> " + repo.local_url)
         
-    def clone(self, selector):
+    def cmd_clone(self, selector):
         if len(selector) == 0:
             selector = ["all"]
 
@@ -240,9 +236,9 @@ class RepoManager:
         return args
 
     def shortcut(self, git_command):
-        return lambda x: self.foreach([self._shortcut(x)[0], git_command] + self._shortcut(x)[1:])
+        return lambda x: self.cmd_foreach([self._shortcut(x)[0], git_command] + self._shortcut(x)[1:])
 
-    def foreach(self, args):
+    def cmd_foreach(self, args):
         if len(args) < 2:
             self.die("Not enough arguments")
         repos = self._select(args[0])
@@ -254,6 +250,19 @@ class RepoManager:
             print "cd %s; %s"%(repo.local_url, command)
             a = subprocess.Popen(command, shell = True)
             a.wait()
+
+    def cmd_sets (self, args):
+        if len(args) < 1:
+            args = [".*all"]
+        else:
+            args[0] = ".*" + args[0]
+
+        for key in self.sets.keys():
+            if args[0] == ".*all" or re.match(args[0], key):
+                print "%s:" % key
+                for repo in self.sets[key]:
+                    print "  " + repo.clone_url + " --> " + repo.local_url
+
         
 
 
