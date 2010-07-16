@@ -5,6 +5,8 @@ import sys
 import subprocess
 import unittest
 import functools
+import urllib2
+from xml.dom.minidom import parse as xml_parse
 
 class Repository:
     clone_url = None
@@ -125,6 +127,41 @@ class SSHDir:
         
     def into(self, local_directory):
         return [Repository(url, into = local_directory) for url in self.urls()]
+
+class Github:
+    clone_urls = None
+
+    def __init__(self, username, protocol="ssh"):
+        self.username = username
+        self.protocol = protocol
+
+    def urls(self):
+        if self.clone_urls == None:
+            self.__get_list();
+        return self.clone_urls
+
+    def __get_list(self):
+        xml = urllib2.urlopen("http://github.com/api/v1/xml/%s"%self.username)
+        repos = xml_parse(xml).getElementsByTagName("repository")
+        self.clone_urls = []
+        for repo in repos:
+            name = repo.getElementsByTagName("name")[0].childNodes[0].data
+            url = ""
+            if self.protocol == "ssh":
+                url = "git@github.com:%s/%s.git" % (self.username, name)
+            elif self.protocol == "https":
+                url = "https://%s@github.com/%s/%s.git" %(self.username, username, name)
+            else:
+                url = "git://github.com/%s/%s.git" %(self.username, name)
+
+            self.clone_urls.append(url)
+    def into(self, local_directory):
+        return [Repository(url, into = local_directory) for url in self.urls()]
+        
+            
+                
+
+
 
 class RepoManager:
     sets = {}

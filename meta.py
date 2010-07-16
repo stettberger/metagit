@@ -13,6 +13,8 @@ uni_repos.extend(SSHDir("qy03fugy@cip", "u").into("~/uni/"))
 r = RepoManager()
 r.add_set("uni", uni_repos)
 r.add_set("peer", peer_repos)
+r.add_set("github", Github("stettberger").into("~/github"))
+
 
 r()
 
