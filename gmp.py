@@ -9,6 +9,8 @@ import urllib2
 from xml.dom.minidom import parse as xml_parse
 
 class Repository:
+    """A Repository instance represents exactly one repository"""
+
     aliases = {}
     clone_url = None
     local_url = None
@@ -23,6 +25,12 @@ class Repository:
     git_options = {}
 
     def __init__(self, clone_url, local_url = None, into = ".", default_policy = "allow"):
+        """clone_url: the url which is used to clone the repository
+local_url: to this directory the repository is cloned
+into: if local_url is null, the repository is cloned into the <into> directory, and the 
+      repository name is appended (without the .git)
+default_policy: defines if the repo can be cloned on all machines ("allow") or not 
+      ("deny"). See add_policy and check_policy for details"""
         self.clone_url = clone_url
         # If no local_url is specified, we use the last part of the clone url
         # without the .git
@@ -42,9 +50,14 @@ class Repository:
         self.policies += [(default_policy, ".*")]
         
     def add_policy(self, regexp, policy = "allow"):
+        """Adds a policy for a specific host. The fqdn of the local host will
+be checked against the regexp here provided"""
         self.policies.append((policy, regexp))
 
     def check_policy(self, hostname):
+        """In order, that you can't clone your big pr0n git into
+your working directory you can define a policy for this repository, 
+that it is only visible on your local machine."""
         result = False
         for policy in self.policies:
             if re.match(policy[1], hostname) != None:
@@ -56,6 +69,9 @@ class Repository:
         return result
 
     def add_git_option(self, command, option):
+        """Adds generic options for a git <command> for this repository
+e.g add_git_option("status", "-s") will always add the -s if you `metagit status'
+the repository"""
         if not command in self.git_options:
             self.git_options[command] = []
         if isinstance(option, (list,tuple)):
@@ -64,17 +80,22 @@ class Repository:
             self.git_options[command].append(option)
 
     def git_option(self, command):
+        """Get all git_options() for a specific command. (See add_git_option)"""
         if not command in self.git_options:
             return ""
         return " ".join(self.git_options[command])
 
     def git_clone(self):
+        """Returns a git clone command as a string"""
         return "git %s %s %s %s" % (self.git_alias("clone"),
                                     self.git_option("clone"),
                                     self.clone_url,
                                     self.local_url)
 
     def get_state(self):
+        """'+' if the repository exists
+'N' if the destination directory exists but isn't a git repo
+'-' if the destination doesn't exists"""
         if os.path.exists(self.local_url + "/.git"):
             return "+"
         elif os.path.exists(self.local_url):
@@ -83,11 +104,14 @@ class Repository:
             return "-"
 
     def git_alias(self, command):
+        """Lookup the command in the self.aliases and replace it if neccessary"""
         if command in self.aliases:
             return self.aliases[command]
         return command
 
 class SVNRepository(Repository):
+    """This Repository type replaces push/clone/pull with the git svn 
+commands dcommit/clone/rebase"""
     aliases = {"push": "svn dcommit",
                "clone": "svn clone",
                "pull": "svn rebase"}
@@ -162,6 +186,7 @@ at <local_directory>/<github_project_name>"""
         return [Repository(url, into = local_directory) for url in self.urls()]
 
 class RepoManager:
+    """Manages all repositories and provides the command line interface"""
     sets = {}
 
     def __init__(self):
@@ -178,6 +203,8 @@ class RepoManager:
     
 
     def __call__(self):
+        """The Reposity Manager can be called in order to start the command
+line interface"""
         args = sys.argv[1:]
         if len(args) < 1:
             self.die("Too less arguments")
@@ -196,6 +223,7 @@ class RepoManager:
 
 
     def add_set(self, set_name, repo_list):
+        """You can add a list of repositories to a set"""
         if not set_name in self.sets:
             self.sets[set_name] = []
         self.sets[set_name].extend(repo_list)

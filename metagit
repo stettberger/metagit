@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
+# Import everything from the work module
 from gmp import *
 
+# A list with plain repositories, these repos are added manually
 peer_repos = []
 peer_repos.append(Repository("peer.zerties.org:metagit", "~/metagit"))
 peer_repos.append(Repository("peer.zerties.org:config", "~/"))
@@ -9,16 +11,24 @@ peer_repos.append(Repository("peer.zerties.org:config", "~/"))
 # To import a SVN Repository with git svn just use SVNRepository, instead of Repository
 # peer_repos.append(SVNRepository("file:///tmp/svn/fooo", "/tmp/testerl"))
 
+# A SSHDir Repository grabber. SSHDir executes a find command in the
+# "u" directory at the given ssh handle, and returns a list of
+# repositories where all the remote handles are put into the "~/uni/" directory
 uni_repos = []
 uni_repos.extend(SSHDir("qy03fugy@cip", "u").into("~/uni/"))
 
+
+# We need an instance of the Repository manager
 r = RepoManager()
 
+# Add a few sets
 r.add_set("uni", uni_repos)
 r.add_set("peer", peer_repos)
+
+# We can also add all repos of a given User at github to a set
 r.add_set("github", Github("stettberger").into("~/github"))
 
-
+# Start the command line interface
 r()
 
 
