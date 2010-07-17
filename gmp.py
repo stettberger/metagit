@@ -245,12 +245,6 @@ protocol: used for cloning the repository (choices: ssh/https/git)"""
 
             self.clone_urls.append(url)
 
-class RepoCache:
-    caches = []
-
-    def __init__(self, iteratable):
-        pass
-
 class RepoManager:
     """Manages all repositories and provides the command line interface"""
     sets = {}
