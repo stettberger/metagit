@@ -1,13 +1,13 @@
 The metagit project can be used to manage a huge amount of git
 repositories at one. For example clone all your github Repositories to
-a folder on your new shinny machine.
+a folder on your new shinny machine. The Project is inspired by a article in 
+the german LinuxMagazin 08/10 by mschilli.
 
 The configuration is located in the main python skript `metagit'. Edit
 it so make it fit your needs. For more information on commands try
 `pydoc gmp' to the python module documentation.
 
 A example session:
-
 
 $ metagit list metagit
 + git@github.com:stettberger/metagit.git --> /home/stettberger/github/metagit
