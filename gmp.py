@@ -93,16 +93,20 @@ class SVNRepository(Repository):
                "pull": "svn rebase"}
 
 class SSHDir:
-    clone_urls = None
+    """With you can create SSHDir a list of git repositories on an remote host"""
+    __clone_urls = None
 
     def __init__(self, host, directory):
+        """host: ssh login used with ssh
+directory: remote directory where the git repos are searched"""
         self.host = host
         self.directory = directory
 
     def urls(self):
-        if self.clone_urls == None:
+        """Retures a list of clone urls in the SSHDir"""
+        if self.__clone_urls == None:
             self.__get_list();
-        return self.clone_urls
+        return self.__clone_urls
 
     def __get_list(self):
         process = subprocess.Popen(["ssh", self.host, "find", self.directory, 
@@ -111,30 +115,36 @@ class SSHDir:
                                    stdout = subprocess.PIPE,
                                    stderr = subprocess.PIPE)
         process.stderr.close()
-        self.clone_urls = []
+        self.__clone_urls = []
         for repo in process.stdout.readlines():
             m = re.match("(.*)/\.git", repo)
-            self.clone_urls.append(self.host + ":" + m.group(1))
+            self.__clone_urls.append(self.host + ":" + m.group(1))
         
     def into(self, local_directory):
+        """Uses the urls() list to create a list of Repositories, which will be located 
+at <local_directory>/<remote_dir_name>"""
         return [Repository(url, into = local_directory) for url in self.urls()]
 
 class Github:
-    clone_urls = None
+    __clone_urls = None
 
     def __init__(self, username, protocol="ssh"):
+        """Uses a github account name to get a list of repositories
+username: github.com username
+protocol: used for cloning the repository (choices: ssh/https/git)"""
         self.username = username
         self.protocol = protocol
 
     def urls(self):
-        if self.clone_urls == None:
+        """ Returns a list of clone urls in the Github account"""
+        if self.__clone_urls == None:
             self.__get_list();
-        return self.clone_urls
+        return self.__clone_urls
 
     def __get_list(self):
         xml = urllib2.urlopen("http://github.com/api/v1/xml/%s"%self.username)
         repos = xml_parse(xml).getElementsByTagName("repository")
-        self.clone_urls = []
+        self.__clone_urls = []
         for repo in repos:
             name = repo.getElementsByTagName("name")[0].childNodes[0].data
             url = ""
@@ -145,8 +155,10 @@ class Github:
             else:
                 url = "git://github.com/%s/%s.git" %(self.username, name)
 
-            self.clone_urls.append(url)
+            self.__clone_urls.append(url)
     def into(self, local_directory):
+        """Uses the urls() list to create a list of Repositories, which will be located 
+at <local_directory>/<github_project_name>"""
         return [Repository(url, into = local_directory) for url in self.urls()]
 
 class RepoManager:
