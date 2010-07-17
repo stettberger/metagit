@@ -27,6 +27,10 @@ r.add_set("peer", peer_repos)
 # We can also add all repos of a given User at github to a set
 r.add_set("github", Github("stettberger", cache="~/metagit-github").into("~/github"))
 
+# We can also list all svn repositories within a svn path
+r.add_set("wohnheim", SVNList("svn+ssh://stettberger@hypnos.hofmann.stw.uni-erlangen.de/admin/svn", 
+                              postfix = "trunk", cache = "~/.metagit-wohnheim-svn").into("~/wohnheim/"))
+
 # Start the command line interface
 r()
 

@@ -137,7 +137,10 @@ commands dcommit/clone/rebase"""
     aliases = {"push": "svn dcommit",
                "clone": "svn clone",
                "pull": "svn rebase"}
-
+    def __init__(self, clone_url, local_url = None, into = ".", default_policy = "allow", repo_name = None):
+        if not local_url:
+            local_url = os.path.join(into, repo_name)
+        Repository.__init__(self, clone_url, local_url, into, default_policy)
 
 #
 # Repository Lister Services
@@ -165,6 +168,9 @@ class RepoLister:
     def get_list(self):
         pass
 
+    def create_repos(self):
+        return [Repository(url, into = self.local_directory) for url in self.urls()]
+
     def __iter__(self):
         if self.cache:
             # There may be a Repository Cache
@@ -180,8 +186,8 @@ class RepoLister:
                     self.cache = None
             
         # Cache does not exist try to build it
-        repos = [Repository(url, into = self.local_directory) for url in self.urls()]
-        if self.cache:
+        repos = self.create_repos()
+        if self.cache and len (repos) > 0:
             cache = open(self.cache, "w+")
             cache.write("[%s" % str(repos[0]))
             for r in repos[1:]:
@@ -244,6 +250,32 @@ protocol: used for cloning the repository (choices: ssh/https/git)"""
                 url = "git://github.com/%s/%s.git" %(self.username, name)
 
             self.clone_urls.append(url)
+
+class SVNList(RepoLister):
+    def __init__(self, svn_repo, postfix = "", cache = None):
+        """Uses a svn list to get a list of svn repositories, which can be used as SVNRepository's
+svn_repo: e.g svn+ssh://stettberger@barfoo.com/admin
+postfix: e.g trunk, will be appended to the clone url"""
+        RepoLister.__init__(self, cache)
+        self.svn_repo = svn_repo
+        self.postfix = postfix
+
+    def create_repos(self):
+        return [SVNRepository(url, into = self.local_directory, repo_name = repo) for (repo, url) in self.urls()]
+
+
+    def get_list(self):
+        process = subprocess.Popen(["svn", "list", self.svn_repo], 
+                                   stdout = subprocess.PIPE)
+
+        self.clone_urls = []
+        for repo in process.stdout.readlines():
+            repo = repo.replace("/\n", "")
+            self.clone_urls.append((repo, os.path.join(os.path.join(self.svn_repo, repo), self.postfix)))
+
+#
+# The Repository manager
+#
 
 class RepoManager:
     """Manages all repositories and provides the command line interface"""
