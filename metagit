@@ -14,7 +14,7 @@ peer_repos.append(Repository("peer.zerties.org:config", "~/"))
 # "u" directory at the given ssh handle, and returns a list of
 # repositories where all the remote handles are put into the "~/uni/" directory
 uni_repos = []
-uni_repos.extend(SSHDir("qy03fugy@cip", "u").into("~/uni/"))
+uni_repos.extend(SSHDir("qy03fugy@cip", "u", cache="~/.metagit-sshdir").into("~/uni/"))
 
 
 # We need an instance of the Repository manager
@@ -25,7 +25,7 @@ r.add_set("uni", uni_repos)
 r.add_set("peer", peer_repos)
 
 # We can also add all repos of a given User at github to a set
-r.add_set("github", Github("stettberger").into("~/github"))
+r.add_set("github", Github("stettberger", cache="~/metagit-github").into("~/github"))
 
 # Start the command line interface
 r()

@@ -12,17 +12,6 @@ class Repository:
     """A Repository instance represents exactly one repository"""
 
     aliases = {}
-    clone_url = None
-    local_url = None
-
-    # This is a list of tuples, whith policies
-    # A Policiy is a Tuple of (TYPE, Regexp) where the Regexp is
-    # compared against the hostname. TYPE \in ["allow", "deny"]
-
-    policies = []
-
-    # Git options is a hash from git-<command> to a list of options
-    git_options = {}
 
     def __init__(self, clone_url, local_url = None, into = ".", default_policy = "allow"):
         """clone_url: the url which is used to clone the repository
@@ -31,6 +20,17 @@ into: if local_url is null, the repository is cloned into the <into> directory, 
       repository name is appended (without the .git)
 default_policy: defines if the repo can be cloned on all machines ("allow") or not 
       ("deny"). See add_policy and check_policy for details"""
+
+
+        # This is a list of tuples, whith policies
+        # A Policiy is a Tuple of (TYPE, Regexp) where the Regexp is
+        # compared against the hostname. TYPE \in ["allow", "deny"]
+
+        self.policies = []
+
+        # Git options is a hash from git-<command> to a list of options
+        self.git_options = {}
+
         self.clone_url = clone_url
         # If no local_url is specified, we use the last part of the clone url
         # without the .git
@@ -48,11 +48,14 @@ default_policy: defines if the repo can be cloned on all machines ("allow") or n
         self.local_url = os.path.expanduser(self.local_url)
 
         self.policies += [(default_policy, ".*")]
+
         
     def add_policy(self, regexp, policy = "allow"):
         """Adds a policy for a specific host. The fqdn of the local host will
 be checked against the regexp here provided"""
         self.policies.append((policy, regexp))
+
+        return self
 
     def check_policy(self, hostname):
         """In order, that you can't clone your big pr0n git into
@@ -79,6 +82,8 @@ the repository"""
         else:
             self.git_options[command].append(option)
 
+        return self
+
     def git_option(self, command):
         """Get all git_options() for a specific command. (See add_git_option)"""
         if not command in self.git_options:
@@ -91,6 +96,23 @@ the repository"""
                                     self.git_option("clone"),
                                     self.clone_url,
                                     self.local_url)
+
+    def __str__(self):
+        """A Repository can be serialized"""
+        ret = "%s('%s', '%s', default_policy = '%s')" %( 
+            self.__class__.__name__,
+            self.clone_url.replace("'", "\\'"),
+            self.local_url.replace("'", "\\'"),
+            self.policies[0][0])
+
+        for policy in self.policies[1:]:
+            ret += ".add_policy('%s', '%s')" %( policy[1].replace("'", "\\'"),
+                                                policy[0].replace("'", "\\'"))
+        for cmd in self.git_options.keys():
+            for option in self.git_options[cmd]:
+                ret += ".add_git_option('%s', '%s')" %( cmd.replace("'", "\\'"),
+                                                        option.replace("'", "\\'"))
+        return ret
 
     def get_state(self):
         """'+' if the repository exists
@@ -116,59 +138,101 @@ commands dcommit/clone/rebase"""
                "clone": "svn clone",
                "pull": "svn rebase"}
 
-class SSHDir:
-    """With you can create SSHDir a list of git repositories on an remote host"""
-    __clone_urls = None
 
-    def __init__(self, host, directory):
-        """host: ssh login used with ssh
-directory: remote directory where the git repos are searched"""
-        self.host = host
-        self.directory = directory
+#
+# Repository Lister Services
+#
+
+class RepoLister:
+    listers = []
+
+    def __init__(self, cache = None):
+        RepoLister.listers.append(self)
+        if cache:
+            self.cache = os.path.expanduser(cache)
+        else:
+            self.cache = None
+
+        self.clone_urls = None
+        self.local_directory = None
 
     def urls(self):
         """Retures a list of clone urls in the SSHDir"""
-        if self.__clone_urls == None:
-            self.__get_list();
-        return self.__clone_urls
+        if self.clone_urls == None:
+            self.get_list()
+        return self.clone_urls
 
-    def __get_list(self):
+    def get_list(self):
+        pass
+
+    def __iter__(self):
+        if self.cache:
+            # There may be a Repository Cache
+            if os.path.exists(self.cache):
+                try:
+                    cache = open(self.cache)
+                    repos = eval(cache.read())
+                    cache.close()
+                    return repos.__iter__()
+                except:
+                    print "WARNING: Invalid cache file: " + self.cache
+                    # Disabling Cache
+                    self.cache = None
+            
+        # Cache does not exist try to build it
+        repos = [Repository(url, into = self.local_directory) for url in self.urls()]
+        if self.cache:
+            cache = open(self.cache, "w+")
+            cache.write("[%s" % str(repos[0]))
+            for r in repos[1:]:
+                cache.write(",\n %s" % str(r))
+            cache.write("]")
+            cache.close()
+        return repos.__iter__()
+
+    def into(self, local_directory):
+        """Uses the urls() list to create a list of Repositories, which will be located 
+at <local_directory>/<remote_dir_name>"""
+        self.local_directory = local_directory
+        return self
+
+class SSHDir(RepoLister):
+    """With you can create SSHDir a list of git repositories on an remote host"""
+
+    def __init__(self, host, directory, cache = None):
+        """host: ssh login used with ssh
+directory: remote directory where the git repos are searched"""
+        RepoLister.__init__(self, cache)
+        self.host = host
+        self.directory = directory
+
+
+    def get_list(self):
         process = subprocess.Popen(["ssh", self.host, "find", self.directory, 
                                     "-maxdepth", "2", "-type", "d",
                                     "-iname", ".git"], 
                                    stdout = subprocess.PIPE,
                                    stderr = subprocess.PIPE)
         process.stderr.close()
-        self.__clone_urls = []
+        self.clone_urls = []
         for repo in process.stdout.readlines():
             m = re.match("(.*)/\.git", repo)
-            self.__clone_urls.append(self.host + ":" + m.group(1))
+            self.clone_urls.append(self.host + ":" + m.group(1))
+            
         
-    def into(self, local_directory):
-        """Uses the urls() list to create a list of Repositories, which will be located 
-at <local_directory>/<remote_dir_name>"""
-        return [Repository(url, into = local_directory) for url in self.urls()]
-
-class Github:
-    __clone_urls = None
-
-    def __init__(self, username, protocol="ssh"):
+class Github(RepoLister):
+    def __init__(self, username, protocol="ssh", cache = None):
         """Uses a github account name to get a list of repositories
 username: github.com username
 protocol: used for cloning the repository (choices: ssh/https/git)"""
+        RepoLister.__init__(self, cache)
         self.username = username
         self.protocol = protocol
 
-    def urls(self):
-        """ Returns a list of clone urls in the Github account"""
-        if self.__clone_urls == None:
-            self.__get_list();
-        return self.__clone_urls
-
-    def __get_list(self):
+    def get_list(self):
         xml = urllib2.urlopen("http://github.com/api/v1/xml/%s"%self.username)
         repos = xml_parse(xml).getElementsByTagName("repository")
-        self.__clone_urls = []
+        self.clone_urls = []
         for repo in repos:
             name = repo.getElementsByTagName("name")[0].childNodes[0].data
             url = ""
@@ -179,11 +243,13 @@ protocol: used for cloning the repository (choices: ssh/https/git)"""
             else:
                 url = "git://github.com/%s/%s.git" %(self.username, name)
 
-            self.__clone_urls.append(url)
-    def into(self, local_directory):
-        """Uses the urls() list to create a list of Repositories, which will be located 
-at <local_directory>/<github_project_name>"""
-        return [Repository(url, into = local_directory) for url in self.urls()]
+            self.clone_urls.append(url)
+
+class RepoCache:
+    caches = []
+
+    def __init__(self, iteratable):
+        pass
 
 class RepoManager:
     """Manages all repositories and provides the command line interface"""
@@ -201,6 +267,7 @@ class RepoManager:
                          "pull" : self.shortcut("pull"),
                          "fetch" : self.shortcut("fetch"),
                          "sets"  : self.cmd_sets,
+                         "clean" : self.cmd_clean,
                          "help" : self.cmd_help}
 
     def __call__(self):
@@ -309,6 +376,12 @@ help selector for more information on selectors"""
                 print "%s:" % key
                 for repo in self.sets[key]:
                     print "  " + repo.clone_url + " --> " + repo.local_url
+
+    def cmd_clean(self, args):
+        """Deletes all Cache files used by directory Listers"""
+        for lister in RepoLister.listers:
+            if lister.cache:
+                os.unlink(lister.cache)
 
     def cmd_help(self, args):
         """recursive: see recursive"""
