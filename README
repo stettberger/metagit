@@ -5,3 +5,18 @@ a folder on your new shinny machine.
 The configuration is located in the main python skript `metagit'. Edit
 it so make it fit your needs. For more information on commands try
 `pydoc gmp' to the python module documentation.
+
+A example session:
+
+
+$ metagit list metagit
++ git@github.com:stettberger/metagit.git --> /home/stettberger/github/metagit
+
+$ metagit foreach metagit commit -a
+cd /home/stettberger/github/metagit; git commit  -a
+[master d6cb963] removed metagit on peer
+ 1 files changed, 0 insertions(+), 1 deletions(-)
+
+$ metagit push metagit
+[... push ...]
+
