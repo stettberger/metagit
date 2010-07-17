@@ -5,7 +5,6 @@ from gmp import *
 
 # A list with plain repositories, these repos are added manually
 peer_repos = []
-peer_repos.append(Repository("peer.zerties.org:metagit", "~/metagit"))
 peer_repos.append(Repository("peer.zerties.org:config", "~/"))
 
 # To import a SVN Repository with git svn just use SVNRepository, instead of Repository
