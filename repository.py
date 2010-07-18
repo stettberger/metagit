@@ -80,6 +80,9 @@ the repository"""
                                                         option.replace("'", "\\'"))
         return ret
 
+    def status_line(self):
+        return (self.get_state() + " " + self.clone_url + " --> " + self.local_url)
+
     def get_state(self):
         """'+' if the repository exists
 'N' if the destination directory exists but isn't a git repo

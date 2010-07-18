@@ -65,7 +65,7 @@ line interface"""
         repos = []
         for s in self.sets.keys():
             for repo in self.sets[s]:
-                if (selector == ".*all" or re.match(selector, s + ":" + repo.clone_url)) \
+                if (selector == ".*all" or re.match(selector, repo.status_line())) \
                         and repo.check_policy(self.hostname):
                     repos.append(repo)
         return repos
@@ -81,7 +81,7 @@ usage: metagit list <selector>"""
             selector = ["all"]
         repos = self._select(selector[0])
         for repo in repos:
-            print(repo.get_state() + " " + repo.clone_url + " --> " + repo.local_url)
+            print repo.status_line()
         
     def cmd_clone(self, selector):
         if len(selector) == 0:
