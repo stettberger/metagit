@@ -35,6 +35,12 @@ r.add_set("wohnheim", SVNList("svn+ssh://stettberger@hypnos.hofmann.stw.uni-erla
               .into("~/svn/")\
               .add_policy("informatik.uni-erlangen.de", "deny"))
 
+
+# I4
+r.add_set("i4-vamos", [SVNRepository("https://www4.informatik.uni-erlangen.de:8088/i4svn/papers/trunk/11/eurosys-life",\
+                                        "~/eurosys-life", default_policy="deny")\
+              .add_policy("faui4", "allow")])
+
 # Start the command line interface
 r()
 
