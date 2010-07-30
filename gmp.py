@@ -27,6 +27,7 @@ class RepoManager:
                          "clone": self.cmd_clone,
                          "foreach": self.cmd_foreach,
                          "status" : self.shortcut("status"),
+                         "commit" : self.shortcut("commit"),
                          "push" : self.shortcut("push"),
                          "pull" : self.shortcut("pull"),
                          "fetch" : self.shortcut("fetch"),

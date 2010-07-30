@@ -6,6 +6,9 @@ from gmp import *
 # A list with plain repositories, these repos are added manually
 peer_repos = []
 peer_repos.append(Repository("peer.zerties.org:config", "~/"))
+peer_repos.extend(SSHDir("stettberger@peer.zerties.org", "git", cache="~/.metagit-sshdir-peer") \
+                     .into("~/git/") \
+                     .add_policy("peer.zerties.org", "deny"))
 
 # To import a SVN Repository with git svn just use SVNRepository, instead of Repository
 # peer_repos.append(SVNRepository("file:///tmp/svn/fooo", "/tmp/testerl"))
