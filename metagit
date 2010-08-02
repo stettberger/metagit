@@ -30,7 +30,8 @@ r.add_set("uni", uni_repos)
 r.add_set("peer", peer_repos)
 
 # We can also add all repos of a given User at github to a set
-r.add_set("github", Github("stettberger", cache="~/.metagit-github").into("~/github"))
+r.add_set("git", Github("stettberger", cache="~/.metagit-github").into("~/github"))
+r.add_set("git", Gitorious("stettberger", cache="~/.metagit-gitorious").into("~/github"))
 
 # We can also list all svn repositories within a svn path
 r.add_set("wohnheim", SVNList("svn+ssh://stettberger@hypnos.hofmann.stw.uni-erlangen.de/admin/svn", 

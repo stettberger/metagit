@@ -143,3 +143,44 @@ postfix: e.g trunk, will be appended to the clone url"""
         for repo in process.stdout.readlines():
             repo = repo.replace("/\n", "")
             self.clone_urls.append((repo, os.path.join(os.path.join(self.svn_repo, repo), self.postfix)))
+
+class Gitorious(RepoLister):
+    def __init__(self, username, protocol="ssh", cache = None, gitorious="gitorious.com"):
+        """Uses a gitorous account name to get a list of repositories
+username: gitorous username
+protocol: used for cloning the repository (choices: ssh/http/git)"""
+        RepoLister.__init__(self, cache)
+
+        self.username = username
+        self.protocol = protocol
+        self.gitorious = gitorious
+
+    def get_list(self):
+        site = urllib2.urlopen("http://%s/~%s"%(self.gitorious, self.username))
+        lines_to_read = 0
+
+        self.clone_urls = []
+        prefixes = {"ssh": "git@%s:"%self.gitorious,
+                    "http": "git.%s/"%self.gitorious,
+                    "git": "git://%s/"%self.gitorious}
+
+        if not self.protocol in prefixes:
+            print "Protocol %s not supported by gitorious list plugin" % self.protocol
+            sys.exit(-1)
+
+        # FIXME: Find a good API for gitorious cause this frickel
+        # might fail in the future, if gitorious starts to send sane
+        # html
+
+        for line in site.readlines():
+            if re.match('.*class="repository"', line):
+                lines_to_read = 2
+            if lines_to_read > 0:
+                m = re.match('.*href="/([^"]*)"', line)
+                if m:
+                    self.clone_urls.append(prefixes[self.protocol] + m.group(1) + ".git")
+                lines_to_read -= 1
+
+        
+                     
+        
