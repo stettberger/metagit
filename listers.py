@@ -86,16 +86,20 @@ directory: remote directory where the git repos are searched"""
 
     def get_list(self):
         process = subprocess.Popen(["ssh", self.host, "find", self.directory, 
-                                    "-maxdepth", "2", "-type", "d",
-                                    "-iname", ".git"], 
+                                    "-maxdepth", "2", "-type", "d"], 
                                    stdout = subprocess.PIPE,
                                    stderr = subprocess.PIPE)
         process.stderr.close()
         self.clone_urls = []
         for repo in process.stdout.readlines():
+            # Finding none bare repositories
             m = re.match("(.*)/\.git", repo)
-            self.clone_urls.append(self.host + ":" + m.group(1))
-            
+            if m:
+                self.clone_urls.append(self.host + ":" + m.group(1))
+            # Finding bare repositories
+            m = re.match("(.*)/refs", repo)
+            if m:
+                self.clone_urls.append(self.host + ":" + m.group(1))
         
 class Github(RepoLister):
     def __init__(self, username, protocol="ssh", cache = None):
