@@ -57,9 +57,16 @@ line interface"""
 
     def add_set(self, set_name, repo_list):
         """You can add a list of repositories to a set"""
+        # Make it possible to use add_set without a list
+        if not isinstance(repo_list, (list,tuple, RepoLister)):
+            repo_list = [repo_list]
+
         if not set_name in self.sets:
             self.sets[set_name] = []
-        self.sets[set_name].extend(repo_list)
+
+        for repo in list(repo_list):
+            repo.set.append(set_name)
+            self.sets[set_name].append(repo)
 
     def _select(self, selector):
         selector = ".*" + selector
@@ -96,8 +103,8 @@ usage: metagit list <selector>"""
                 os.makedirs(directory)
             if os.path.exists(repo.local_url):
                 continue
-            print repo.git_clone()
-            a = subprocess.Popen(repo.git_clone(), shell = True)
+            print repo.clone()
+            a = subprocess.Popen(repo.clone(), shell = True)
             a.wait()
 
     def _shortcut(self, args):
@@ -105,32 +112,32 @@ usage: metagit list <selector>"""
             return ["all"]
         return args
 
-    def shortcut(self, git_command, help = None):
+    def shortcut(self, command, help = None):
         if not help:
-            help = "alias %s <selector> = foreach <selector> %s" %(git_command, git_command)
-        func = lambda x: self.cmd_foreach([self._shortcut(x)[0], git_command] + self._shortcut(x)[1:])
+            help = "alias %s <selector> = foreach <selector> %s" %(command, command)
+        func = lambda x: self.cmd_foreach([self._shortcut(x)[0], command] + self._shortcut(x)[1:])
         func.__doc__ = help
         return func
 
     def cmd_foreach(self, args):
-        """usage: metagit foreach <selector> <git-command>
- executes git command on all repositories matching the selector
+        """usage: metagit foreach <selector> <command>
+ executes command on all repositories matching the selector
 
 help selector for more information on selectors"""
         if len(args) < 2:
             self.die("Not enough arguments")
         repos = self._select(args[0])
         for repo in repos:
-            if not os.path.exists(repo.local_url + "/.git"):
+            if not repo.get_state() in [repo.STATE_EXISTS, repo.STATE_BARE]:
                 continue
             os.chdir(repo.local_url)
-            command = "git " + repo.git_alias(args[1]) + " " + (" ".join(repo.git_option(args[1]))) + " " + " ".join(args[2:])
+            command = repo.exec_string(args[1], args[2:])
             print "cd %s; %s"%(repo.local_url, command)
             a = subprocess.Popen(command, shell = True)
             a.wait()
 
     def cmd_sets (self, args):
-        """Show only git repository sets"""
+        """Show only repository sets"""
         if len(args) < 1:
             args = [".*all"]
         else:
@@ -140,7 +147,7 @@ help selector for more information on selectors"""
             if args[0] == ".*all" or re.match(args[0], key):
                 print "%s:" % key
                 for repo in self.sets[key]:
-                    print "  " + repo.clone_url + " --> " + repo.local_url
+                    print "  " + repo.status_line()
 
     def cmd_clean(self, args):
         """Deletes all Cache files used by directory Listers"""

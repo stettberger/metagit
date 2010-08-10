@@ -30,8 +30,8 @@ r.add_set("uni", uni_repos)
 r.add_set("peer", peer_repos)
 
 # We can also add all repos of a given User at github to a set
-r.add_set("git", Github("stettberger", cache="~/.metagit-github").into("~/github"))
-r.add_set("git", Gitorious("stettberger", cache="~/.metagit-gitorious").into("~/github"))
+r.add_set("hub", Github("stettberger", cache="~/.metagit-github").into("~/github"))
+r.add_set("hub", Gitorious("stettberger", cache="~/.metagit-gitorious").into("~/github"))
 
 # We can also list all svn repositories within a svn path
 r.add_set("wohnheim", SVNList("svn+ssh://stettberger@hypnos.hofmann.stw.uni-erlangen.de/admin/svn", 
@@ -41,9 +41,12 @@ r.add_set("wohnheim", SVNList("svn+ssh://stettberger@hypnos.hofmann.stw.uni-erla
 
 
 # I4
-r.add_set("i4-vamos", [SVNRepository("https://www4.informatik.uni-erlangen.de:8088/i4svn/papers/trunk/11/eurosys-life",\
+r.add_set("i4", [SVNRepository("https://www4.informatik.uni-erlangen.de:8088/i4svn/papers/trunk/11/eurosys-life",\
                                         "~/eurosys-life", default_policy="deny")\
               .add_policy("faui4", "allow")])
+
+# Example mercurial Repository
+r.add_set("hg", [Repository("http://selenic.com/repo/hello", "/tmp/hg-hello", scm = 'hg')])
 
 # Start the command line interface
 r()
