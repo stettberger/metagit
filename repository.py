@@ -123,12 +123,12 @@ the repository"""
 
 class SVNRepository(Repository):
     """This Repository type replaces push/clone/pull with the git svn 
-commands dcommit/clone/rebase"""
+commands dcommit/clone/rebase, here only hg is permitted"""
     aliases = {"push": "svn dcommit",
                "clone": "svn clone",
                "pull": "svn rebase"}
     def __init__(self, clone_url, local_url = None, into = ".", default_policy = "allow", repo_name = None):
         if not local_url:
             local_url = os.path.join(into, repo_name)
-        Repository.__init__(self, clone_url, local_url, into, default_policy)
+        Repository.__init__(self, clone_url, local_url, into, default_policy, scm = "git")
 
