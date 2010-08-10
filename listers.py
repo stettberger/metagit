@@ -26,6 +26,9 @@ class RepoLister (PolicyMixin):
         self.clone_urls = None
         self.local_directory = None
 
+        # Default source control management is git, but can be changed by more specific listers
+        self.scm = "git"
+
     def urls(self):
         """Retures a list of clone urls in the SSHDir"""
         if self.clone_urls == None:
@@ -36,7 +39,7 @@ class RepoLister (PolicyMixin):
         pass
 
     def create_repos(self):
-        return [Repository(url, into = self.local_directory) for url in self.urls()]
+        return [Repository(url, into = self.local_directory, scm = self.scm) for url in self.urls()]
 
     def __iter__(self):
         # Check Policy against own FQDN
@@ -76,12 +79,13 @@ at <local_directory>/<remote_dir_name>"""
 class SSHDir(RepoLister):
     """With you can create SSHDir a list of git repositories on an remote host"""
 
-    def __init__(self, host, directory, cache = None):
+    def __init__(self, host, directory, cache = None, scm = "git"):
         """host: ssh login used with ssh
 directory: remote directory where the git repos are searched"""
         RepoLister.__init__(self, cache)
         self.host = host
         self.directory = directory
+        self.scm = scm
 
 
     def get_list(self):
@@ -93,7 +97,7 @@ directory: remote directory where the git repos are searched"""
         self.clone_urls = []
         for repo in process.stdout.readlines():
             # Finding none bare repositories
-            m = re.match("(.*)/\.git", repo)
+            m = re.match("(.*)/\.%s" % self.scm, repo)
             if m:
                 self.clone_urls.append(self.host + ":" + m.group(1))
             # Finding bare repositories
