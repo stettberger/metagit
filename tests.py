@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import unittest
 from gmp import *
 
 class RepositoryTestcase(unittest.TestCase):
@@ -13,10 +14,10 @@ class RepositoryTestcase(unittest.TestCase):
         assert self.repo.check_policy("foobar") == True
 
     def testGitOptions(self):
-        self.repo.add_git_option("clone", "--bare")
-        self.repo.add_git_option("clone", ["--bare", "foo"])
+        self.repo.add_option("clone", "--bare")
+        self.repo.add_option("clone", ["--bare", "foo"])
 
-        assert self.repo.git_option("clone") == "--bare --bare foo"
+        assert self.repo.option("clone") == "--bare --bare foo"
 
     def testLocalName(self):
         self.assertEqual(Repository("foo/bar/baz/das.git").local_url, "./das")

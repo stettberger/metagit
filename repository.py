@@ -54,7 +54,7 @@ default_policy: defines if the repo can be cloned on all machines ("allow") or n
         """Adds generic options for a git <command> for this repository
 e.g add_git_option("status", "-s") will always add the -s if you `metagit status'
 the repository"""
-        if not command in self.git_options:
+        if not command in self.options:
             self.options[command] = []
         if isinstance(option, (list,tuple)):
             self.options[command].extend(option)
