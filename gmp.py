@@ -32,6 +32,7 @@ class RepoManager:
                          "pull" : self.shortcut("pull"),
                          "fetch" : self.shortcut("fetch"),
                          "sets"  : self.cmd_sets,
+                         "cd"    : self.cmd_cd,
                          "clean" : self.cmd_clean,
                          "help" : self.cmd_help}
 
@@ -157,6 +158,15 @@ help selector for more information on selectors"""
                     os.unlink(lister.cache)
                 except:
                     pass
+
+    def cmd_cd(self, args):
+        """Prints a cd commando, which, after executed jumps to the (first) repo"""
+        repos = self._select(args[0])
+        if len(repos) > 0:
+            print "cd " + repos[0].local_url.replace("'", "\\'")
+        else:
+            print "echo No correspongding repository found"
+        
 
     def cmd_help(self, args):
         """recursive: see recursive"""

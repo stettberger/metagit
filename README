@@ -11,7 +11,10 @@ it so make it fit your needs. For more information on commands try
 A example session:
 
 $ metagit list metagit
-+ git@github.com:stettberger/metagit.git --> /home/stettberger/github/metagit
++ (git:hub) git@github.com:stettberger/metagit.git --> /home/cip/2009/qy03fugy/github/metagit
+$ `metagit cd metagit`
+$ echo $PWD
+/home/cip/2009/qy03fugy/github/metagit
 
 $ metagit foreach metagit commit -a
 cd /home/stettberger/github/metagit; git commit  -a
