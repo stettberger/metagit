@@ -13,8 +13,8 @@ from repository import *
 class RepoLister (PolicyMixin):
     listers = []
 
-    def __init__(self, cache = None):
-        PolicyMixin.__init__(self, "allow")
+    def __init__(self, cache = None, default_policy = "allow"):
+        PolicyMixin.__init__(self, default_policy)
 
         RepoLister.listers.append(self)
         
@@ -79,10 +79,10 @@ at <local_directory>/<remote_dir_name>"""
 class SSHDir(RepoLister):
     """With you can create SSHDir a list of git repositories on an remote host"""
 
-    def __init__(self, host, directory, cache = None, scm = "git"):
+    def __init__(self, host, directory, scm = "git", **kwargs):
         """host: ssh login used with ssh
 directory: remote directory where the git repos are searched"""
-        RepoLister.__init__(self, cache)
+        RepoLister.__init__(self, **kwargs)
         self.host = host
         self.directory = directory
         self.scm = scm
@@ -106,11 +106,11 @@ directory: remote directory where the git repos are searched"""
                 self.clone_urls.append(self.host + ":" + m.group(1))
         
 class Github(RepoLister):
-    def __init__(self, username, protocol="ssh", cache = None):
+    def __init__(self, username, protocol="ssh", **kwargs):
         """Uses a github account name to get a list of repositories
 username: github.com username
 protocol: used for cloning the repository (choices: ssh/https/git)"""
-        RepoLister.__init__(self, cache)
+        RepoLister.__init__(self, **kwargs)
         self.username = username
         self.protocol = protocol
 
@@ -131,11 +131,11 @@ protocol: used for cloning the repository (choices: ssh/https/git)"""
             self.clone_urls.append(url)
 
 class SVNList(RepoLister):
-    def __init__(self, svn_repo, postfix = "", cache = None):
+    def __init__(self, svn_repo, postfix = "", **kwargs):
         """Uses a svn list to get a list of svn repositories, which can be used as SVNRepository's
 svn_repo: e.g svn+ssh://stettberger@barfoo.com/admin
 postfix: e.g trunk, will be appended to the clone url"""
-        RepoLister.__init__(self, cache)
+        RepoLister.__init__(self, **kwargs)
         self.svn_repo = svn_repo
         self.postfix = postfix
 
@@ -153,11 +153,11 @@ postfix: e.g trunk, will be appended to the clone url"""
             self.clone_urls.append((repo, os.path.join(os.path.join(self.svn_repo, repo), self.postfix)))
 
 class Gitorious(RepoLister):
-    def __init__(self, username, protocol="ssh", cache = None, gitorious="gitorious.com"):
+    def __init__(self, username, protocol="ssh", gitorious="gitorious.com", **kwargs):
         """Uses a gitorous account name to get a list of repositories
 username: gitorous username
 protocol: used for cloning the repository (choices: ssh/http/git)"""
-        RepoLister.__init__(self, cache)
+        RepoLister.__init__(self, **kwargs)
 
         self.username = username
         self.protocol = protocol

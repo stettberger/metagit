@@ -35,9 +35,9 @@ r.add_set("hub", Gitorious("stettberger", cache="~/.metagit-gitorious").into("~/
 
 # We can also list all svn repositories within a svn path
 r.add_set("wohnheim", SVNList("svn+ssh://stettberger@hypnos.hofmann.stw.uni-erlangen.de/admin/svn", 
-                              postfix = "trunk", cache = "~/.metagit-wohnheim-svn")\
+                              postfix = "trunk", default_policy = "deny", cache = "~/.metagit-wohnheim-svn")\
               .into("~/svn/")\
-              .add_policy("informatik.uni-erlangen.de", "deny"))
+              .add_policy("stw.uni-erlangen.de", "allow"))
 
 
 # I4
