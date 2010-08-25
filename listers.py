@@ -77,17 +77,25 @@ at <local_directory>/<remote_dir_name>"""
         self.local_directory = local_directory
         return self
 
+    def can_upload(self):
+        """Returns True if the Repository Lister is able to move a repository from local to this site
+If it returns True, it must have an attribute name and a method upload(self, local_url, remote_url)"""
+        return False
+
 class SSHDir(RepoLister):
     """With you can create SSHDir a list of git repositories on an remote host"""
 
-    def __init__(self, host, directory, cache = None, scm = "git"):
+    def __init__(self, host, directory, cache = None, scm = "git", name = None):
         """host: ssh login used with ssh
 directory: remote directory where the git repos are searched"""
         RepoLister.__init__(self, cache)
         self.host = host
         self.directory = directory
         self.scm = scm
-
+        if not name:
+            self.name = host
+        else:
+            self.name = name
 
     def get_list(self):
         process = subprocess.Popen(["ssh", self.host, "find", self.directory, 
@@ -105,6 +113,21 @@ directory: remote directory where the git repos are searched"""
             m = re.match("(.*)/refs", repo)
             if m:
                 self.clone_urls.append(self.host + ":" + m.group(1))
+                
+    def can_upload(self):
+        """You can upload a repository to a remote site"""
+        return True
+
+    def upload(self, local, remote):
+        """Uploads a local repository with scp to a remote location"""
+        cmd = "scp -r '%s' '%s:%s'" %(local.replace("'","\\'"), 
+                                      self.host,
+                                      os.path.join(self.directory, remote).replace("'", "\\'"))
+        print cmd
+        a = subprocess.Popen(cmd, shell = True)
+        a.wait()
+        os.unlink(self.cache)
+        
         
 class Github(RepoLister):
     def __init__(self, username, protocol="ssh", cache = None):

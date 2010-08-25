@@ -25,6 +25,7 @@ class RepoManager:
         self.hostname = getfqdn()
         self.commands = {"list": self.cmd_list,
                          "clone": self.cmd_clone,
+                         "upload": self.cmd_upload,
                          "foreach": self.cmd_foreach,
                          "status" : self.shortcut("status"),
                          "commit" : self.shortcut("commit"),
@@ -190,6 +191,43 @@ function mm() {
                 print "echo Selection out of range"
         else:
             print "echo No correspongding repository found"
+
+
+    def cmd_upload(self, args):
+        """metagit upload <RepoLister> <LocalRepo> [RemoteRepo]
+
+Does upload an Repository to an remote site which is specified by an 
+RepoLister name (e.g. an SSHDir)"""
+
+        listers = filter(lambda x: x.can_upload(), RepoLister.listers)
+        listers_name = map(lambda x: x.name, listers)
+
+        if len(args) < 2 or not args[0] in listers_name:
+            self.cmd_help(["upload"])
+            print
+            print "Available RepoListers: " + ", ".join(listers_name)
+            return
+        
+        # Find the matching repo lister to the name
+        lister = listers[listers_name.index(args[0])] 
+        local_url = args[1]
+        if not os.path.exists(local_url):
+            print "Local Repository doesn't exist"
+            sys.exit(-1)
+
+        if len(args) < 3:
+            remote_url = args[1].split("/")[-1]
+        else:
+            remote_url = args[2]
+
+        print "Uploading '%s' to '%s' on %s" %(local_url, remote_url, lister.name)
+        sys.stdout.write("Proceed? (Y/n) ")
+        a = raw_input()
+        if a in ["", "y", "Y", "yes"]:
+            lister.upload(local_url, remote_url)
+        else:
+            print "Aborting."
+            sys.exit(-1)
         
 
     def cmd_help(self, args):

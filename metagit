@@ -6,7 +6,7 @@ from gmp import *
 # A list with plain repositories, these repos are added manually
 peer_repos = []
 peer_repos.append(Repository("peer.zerties.org:config", "~/"))
-peer_repos.extend(SSHDir("stettberger@peer.zerties.org", "git", cache="~/.metagit-sshdir-peer") \
+peer_repos.extend(SSHDir("stettberger@peer.zerties.org", "git", cache="~/.metagit-sshdir-peer", name="peer") \
                      .into("~/git/") \
                      .add_policy("peer.zerties.org", "deny"))
 
@@ -17,7 +17,7 @@ peer_repos.extend(SSHDir("stettberger@peer.zerties.org", "git", cache="~/.metagi
 # "u" directory at the given ssh handle, and returns a list of
 # repositories where all the remote handles are put into the "~/uni/" directory
 uni_repos = []
-uni_repos.extend(SSHDir("qy03fugy@cip", "u", cache="~/.metagit-sshdir") \
+uni_repos.extend(SSHDir("qy03fugy@cip", "u", cache="~/.metagit-sshdir", name = "cip") \
                      .into("~/uni/") \
                      .add_policy("informatik.uni-erlangen.de", "deny"))
 
