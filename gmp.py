@@ -18,8 +18,8 @@ from listers import *
 class RepoManager:
     """Manages all repositories and provides the command line interface"""
     sets = {}
-    help_commands = {"selector": """A selector is a regexp which is checked against
-<sets>:<clone-url> of a repository. So '^<set>:' will only select repositories within a given set."""}
+    help_commands = {"selector": """A selector is a regexp which is checked against the output of 
+metagit list."""}
 
     def __init__(self):
         self.hostname = getfqdn()
@@ -58,7 +58,11 @@ line interface"""
     def die(self, msg):
         print msg
         print
+        print "For more Info: metagit help <something>"
+        print "  `metagit help all' for help to everything"
+        print
         print "Commands: " + ", ".join(self.commands.keys())
+        print "Topics: " + ", ".join(self.help_commands.keys())
         
         sys.exit(-1)
 
@@ -101,6 +105,8 @@ usage: metagit list <selector>"""
             print repo.status_line()
         
     def cmd_clone(self, selector):
+        """metagit clone [selector]
+clone all repositories available on this host, if no selector given, clone all"""
         if len(selector) == 0:
             selector = ["all"]
 
@@ -129,10 +135,10 @@ usage: metagit list <selector>"""
         return func
 
     def cmd_foreach(self, args):
-        """usage: metagit foreach <selector> <command>
- executes command on all repositories matching the selector
+        """metagit foreach <selector> <command>
+executes command on all repositories matching the selector
 
-help selector for more information on selectors"""
+`help selector' for more information on selectors"""
         if len(args) < 2:
             self.die("Not enough arguments")
         repos = self._select(args[0])
@@ -146,7 +152,8 @@ help selector for more information on selectors"""
             a.wait()
 
     def cmd_sets (self, args):
-        """Show only repository sets"""
+        """metagit sets [regex]
+Prints a detailed overview on the sets which matches the [regex] or all"""
         if len(args) < 1:
             args = [".*all"]
         else:
@@ -159,7 +166,7 @@ help selector for more information on selectors"""
                     print "  " + repo.status_line()
 
     def cmd_clean(self, args):
-        """Deletes all Cache files used by directory Listers"""
+        """Deletes all cache files used by RepoListers"""
         for lister in RepoLister.listers:
             if lister.cache:
                 try:
@@ -240,15 +247,22 @@ RepoLister name (e.g. an SSHDir)"""
         """recursive: see recursive"""
         if len(args) < 1:
             self.die("No topic selected")
-        if args[0] in self.commands:
+        if args[0] == "all":
+            topics = self.commands.keys() + self.help_commands.keys()
+            for t in sorted(topics):
+                self.cmd_help([t])
+                print
+        elif args[0] in self.commands:
             doc = self.commands[args[0]].__doc__
             if doc:
-                print doc
+                sys.stdout.write(args[0] + ":")
+                print re.sub("(^|\n)", "\n  ", doc)
             else:
                 self.die("No help available")
 
         elif args[0] in self.help_commands:
-            print self.help_commands[args[0]]
+            sys.stdout.write(args[0] + ":")
+            print re.sub("(^|\n)", "\n  ", self.help_commands[args[0]])
 
         else:
             self.die("No help available")

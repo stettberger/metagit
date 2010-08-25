@@ -26,6 +26,7 @@ $ metagit push metagit
 
 == Features ==
 * SSHDir Listing - find repos on a remote machine
+** With support for uploading Repos to this remote dir
 * Github Listing - find all your github repos
 * Gitorious Listing - find all youy Gitorius repos
 * SVNList - clone all your svn repositories with git svn
