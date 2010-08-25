@@ -69,14 +69,15 @@ line interface"""
             repo.set.append(set_name)
             self.sets[set_name].append(repo)
 
-    def _select(self, selector):
+    def _select(self, selector, state = None):
         selector = ".*" + selector
         repos = []
         for s in self.sets.keys():
             for repo in self.sets[s]:
                 if (selector == ".*all" or re.match(selector, repo.status_line())) \
                         and repo.check_policy(self.hostname):
-                    repos.append(repo)
+                    if not state or repo.get_state() in state:
+                        repos.append(repo)
         return repos
     
     def cmd_list(self, selector):
@@ -160,10 +161,33 @@ help selector for more information on selectors"""
                     pass
 
     def cmd_cd(self, args):
-        """Prints a cd commando, which, after executed jumps to the (first) repo"""
-        repos = self._select(args[0])
-        if len(repos) > 0:
+        """Prints a cd commando, which, after executed jumps to the repo
+For direct use in the shell use this command:
+
+function mm() {
+  $(metagit cd $@)
+}
+"""
+        if len(args) == 0:
+            print "echo Please specify target repository"
+            return
+        repos = self._select(args[0], state = [Repository.STATE_EXISTS, Repository.STATE_BARE])
+        if len(repos)  == 1:
             print "cd " + repos[0].local_url.replace("'", "\\'")
+        elif len(repos) > 1:
+            for r in range(1, len(repos)+1):
+                sys.stderr.write("%d. %s\n" %(r,repos[r-1].local_url))
+
+
+            sys.stderr.write("\nSelect Repository: ")
+            try:
+                select = input()
+            except:
+                return
+            if select <= len(repos):
+                print "cd " + repos[select - 1].local_url.replace("'", "\\'")
+            else:
+                print "echo Selection out of range"
         else:
             print "echo No correspongding repository found"
         
