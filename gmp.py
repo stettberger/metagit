@@ -37,6 +37,10 @@ class RepoManager:
                          "clean" : self.cmd_clean,
                          "help" : self.cmd_help}
 
+        # Translation table for short commands
+        # FIXME: not documentated anywhere
+        self.short_commands = {'l': 'list'}
+
     def __call__(self):
         """The Reposity Manager can be called in order to start the command
 line interface"""
@@ -46,6 +50,8 @@ line interface"""
 
         if args[0] in self.commands:
             self.commands[args[0]](args[1:])
+        elif args[0] in self.short_commands:
+            self.commands[self.short_commands[args[0]]](args[1:])
         else:
             self.die("Command not found: " + args[0])
 
