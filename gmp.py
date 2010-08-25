@@ -39,7 +39,7 @@ metagit list."""}
 
         # Translation table for short commands
         # FIXME: not documentated anywhere
-        self.short_commands = {'l': 'list'}
+        self.short_commands = {'c': 'clone'}
 
     def __call__(self):
         """The Reposity Manager can be called in order to start the command
@@ -48,10 +48,15 @@ line interface"""
         if len(args) < 1:
             self.die("Too less arguments")
 
-        if args[0] in self.commands:
-            self.commands[args[0]](args[1:])
+
+        # Use prefixing to do short commands
+        short = [x for x in self.commands.keys() if x.startswith(args[0])]
+        if len(short) == 1:
+            self.commands[short[0]](args[1:])
         elif args[0] in self.short_commands:
             self.commands[self.short_commands[args[0]]](args[1:])
+        elif len(short) > 1:
+            self.die("Unsure commands, possible: " + ", ".join(short))
         else:
             self.die("Command not found: " + args[0])
 
