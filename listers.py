@@ -57,7 +57,7 @@ class RepoLister (PolicyMixin):
                     repos = eval(cache.read())
                     cache.close()
                     return repos.__iter__()
-                except Exception as e:
+                except Exception, e:
                     print "WARNING: Invalid cache file: " + self.cache
                     # Disabling Cache
                     self.cache = None
