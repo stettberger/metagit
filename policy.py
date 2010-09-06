@@ -3,6 +3,7 @@ from socket import getfqdn
 
 class PolicyMixin:
     def __init__(self, default_policy = "allow"):
+        self.default_policy = default_policy
         self.policies = [(".*", default_policy)]
 
     def add_policy(self, regexp, policy = "allow"):

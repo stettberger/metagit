@@ -9,6 +9,7 @@ import subprocess
 from policy import *
 from repository import *
 from listers import *
+from tools import *
 
 
 #
@@ -215,7 +216,16 @@ function mm() {
         """metagit upload <RepoLister> <LocalRepo> [RemoteRepo]
 
 Does upload an Repository to an remote site which is specified by an 
-RepoLister name (e.g. an SSHDir)"""
+RepoLister name (e.g. an SSHDir)
+
+--origin | -o: set the origin remote to this new repository.
+"""
+
+        origin = False
+        for o in ["-o", "--origin"]:
+            if o in args:
+                del args[args.index(o)]
+                origin = True
 
         listers = filter(lambda x: x.can_upload(), RepoLister.listers)
         listers_name = map(lambda x: x.name, listers)
@@ -242,11 +252,18 @@ RepoLister name (e.g. an SSHDir)"""
         sys.stdout.write("Proceed? (Y/n) ")
         a = raw_input()
         if a in ["", "y", "Y", "yes"]:
-            lister.upload(local_url, remote_url)
+            repo = lister.upload(local_url, remote_url)
         else:
             print "Aborting."
             sys.exit(-1)
-        
+
+        # Changing the origin remote
+        if origin:
+            cmd = "cd '%s'; git remote rm origin; git remote add origin '%s'" \
+                  %(esc(repo.local_url), esc(repo.clone_url))
+            print cmd
+            a = subprocess.Popen(cmd, shell = True)
+            a.wait()
 
     def cmd_help(self, args):
         """recursive: see recursive"""

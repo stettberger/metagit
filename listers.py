@@ -13,8 +13,8 @@ from repository import *
 class RepoLister (PolicyMixin):
     listers = []
 
-    def __init__(self, cache = None):
-        PolicyMixin.__init__(self, "allow")
+    def __init__(self, cache = None, default_policy = "allow", scm = "git", name = None):
+        PolicyMixin.__init__(self, default_policy)
 
         RepoLister.listers.append(self)
         
@@ -27,7 +27,9 @@ class RepoLister (PolicyMixin):
         self.local_directory = None
 
         # Default source control management is git, but can be changed by more specific listers
-        self.scm = "git"
+        self.scm = scm
+
+        self.name = name
 
     def urls(self):
         """Retures a list of clone urls in the SSHDir"""
@@ -85,17 +87,16 @@ If it returns True, it must have an attribute name and a method upload(self, loc
 class SSHDir(RepoLister):
     """With you can create SSHDir a list of git repositories on an remote host"""
 
-    def __init__(self, host, directory, cache = None, scm = "git", name = None):
+    def __init__(self, host, directory, **kwargs):
         """host: ssh login used with ssh
 directory: remote directory where the git repos are searched"""
-        RepoLister.__init__(self, cache)
+        RepoLister.__init__(self, **kwargs)
         self.host = host
         self.directory = directory
-        self.scm = scm
-        if not name:
+
+        if not self.name:
             self.name = host
-        else:
-            self.name = name
+
 
     def get_list(self):
         process = subprocess.Popen(["ssh", self.host, "find", self.directory, 
@@ -120,21 +121,28 @@ directory: remote directory where the git repos are searched"""
 
     def upload(self, local, remote):
         """Uploads a local repository with scp to a remote location"""
-        cmd = "scp -r '%s' '%s:%s'" %(local.replace("'","\\'"), 
-                                      self.host,
-                                      os.path.join(self.directory, remote).replace("'", "\\'"))
+
+        push_url = "%s:%s" %(self.host,
+                             os.path.join(self.directory, remote))
+        
+        cmd = "scp -r '%s' '%s'"% (local.replace("'", "\\'"),
+                                   push_url.replace("'", "\\'"))
         print cmd
         a = subprocess.Popen(cmd, shell = True)
         a.wait()
         os.unlink(self.cache)
-        
+
+        return Repository(push_url, local, default_policy = self.default_policy, scm = self.scm)
         
 class Github(RepoLister):
-    def __init__(self, username = None, protocol="ssh", cache = None, name = "github"):
+    def __init__(self, username = None, protocol="ssh", **kwargs):
         """Uses a github account name to get a list of repositories
 username: github.com username (can be derived from github.user)
 protocol: used for cloning the repository (choices: ssh/https/git)"""
-        RepoLister.__init__(self, cache)
+        # GIThub!!!!
+        kwargs['scm'] = 'git'
+        
+        RepoLister.__init__(self, **kwargs)
         self.username = username
         if self.username == None:
             cmd = "git config --get github.user"
@@ -150,7 +158,6 @@ protocol: used for cloning the repository (choices: ssh/https/git)"""
             self.username = username
             
         self.protocol = protocol
-        self.name = name
 
     def get_list(self):
         xml = urllib2.urlopen("http://github.com/api/v1/xml/%s"%self.username)
@@ -203,14 +210,18 @@ Please set the github.token variable via git config"""
         a = subprocess.Popen(cmd, shell = True)
         a.wait()
         os.unlink(self.cache)
+
+        return Repository(self.github_url(remote), remote, default_policy = self.default_policy, scm = 'git')
         
 
 class SVNList(RepoLister):
-    def __init__(self, svn_repo, postfix = "", cache = None):
+    def __init__(self, svn_repo, postfix = "", **kwargs):
         """Uses a svn list to get a list of svn repositories, which can be used as SVNRepository's
 svn_repo: e.g svn+ssh://stettberger@barfoo.com/admin
 postfix: e.g trunk, will be appended to the clone url"""
-        RepoLister.__init__(self, cache)
+        # This works just with git svn!
+        kwargs['scm'] = 'git'
+        RepoLister.__init__(self, **kwargs)
         self.svn_repo = svn_repo
         self.postfix = postfix
 
@@ -228,11 +239,13 @@ postfix: e.g trunk, will be appended to the clone url"""
             self.clone_urls.append((repo, os.path.join(os.path.join(self.svn_repo, repo), self.postfix)))
 
 class Gitorious(RepoLister):
-    def __init__(self, username, protocol="ssh", cache = None, gitorious="gitorious.com"):
+    def __init__(self, username, protocol="ssh", gitorious="gitorious.com", **kwargs):
         """Uses a gitorous account name to get a list of repositories
 username: gitorous username
 protocol: used for cloning the repository (choices: ssh/http/git)"""
-        RepoLister.__init__(self, cache)
+        # GITorious!!!
+        kwargs['scm'] = 'git'
+        RepoLister.__init__(self, **kwargs)
 
         self.username = username
         self.protocol = protocol
