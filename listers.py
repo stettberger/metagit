@@ -1,5 +1,5 @@
-import os
-import urllib2
+import os, sys
+import urllib2, urllib
 import re
 import subprocess
 from xml.dom.minidom import parse as xml_parse
@@ -130,13 +130,27 @@ directory: remote directory where the git repos are searched"""
         
         
 class Github(RepoLister):
-    def __init__(self, username, protocol="ssh", cache = None):
+    def __init__(self, username = None, protocol="ssh", cache = None, name = "github"):
         """Uses a github account name to get a list of repositories
-username: github.com username
+username: github.com username (can be derived from github.user)
 protocol: used for cloning the repository (choices: ssh/https/git)"""
         RepoLister.__init__(self, cache)
         self.username = username
+        if self.username == None:
+            cmd = "git config --get github.user"
+            process = subprocess.Popen(cmd, shell = True,
+                                       stdout = subprocess.PIPE,
+                                       stderr = subprocess.PIPE)
+            process.stderr.close()
+            username = process.stdout.readline().strip()
+            if username == "":
+                print """ERROR: No username defined for Github lister, please define github.user
+    via git config or put it into the config file"""
+                sys.exit(-1)
+            self.username = username
+            
         self.protocol = protocol
+        self.name = name
 
     def get_list(self):
         xml = urllib2.urlopen("http://github.com/api/v1/xml/%s"%self.username)
@@ -144,15 +158,52 @@ protocol: used for cloning the repository (choices: ssh/https/git)"""
         self.clone_urls = []
         for repo in repos:
             name = repo.getElementsByTagName("name")[0].childNodes[0].data
-            url = ""
-            if self.protocol == "ssh":
-                url = "git@github.com:%s/%s.git" % (self.username, name)
-            elif self.protocol == "https":
-                url = "https://%s@github.com/%s/%s.git" %(self.username, username, name)
-            else:
-                url = "git://github.com/%s/%s.git" %(self.username, name)
+            self.clone_urls.append(self.github_url(name))
 
-            self.clone_urls.append(url)
+    def github_url(self, name):
+        url = ""
+        if self.protocol == "ssh":
+            url = "git@github.com:%s/%s.git" % (self.username, name)
+        elif self.protocol == "https":
+            url = "https://%s@github.com/%s/%s.git" %(self.username, self.username, name)
+        else:
+            url = "git://github.com/%s/%s.git" %(self.username, name)
+        return url
+        
+    def can_upload(self):
+        """You can upload a repository to a remote site"""
+        return True
+
+    def upload(self, local, remote):
+        """Creates a new repository at github and pushes the local one to it.
+Please set the github.token variable via git config"""
+        cmd = "git config --get github.token"
+        print cmd
+        process = subprocess.Popen(cmd, shell = True,
+                                   stdout = subprocess.PIPE,
+                                   stderr = subprocess.PIPE)
+        process.stderr.close()
+        token = process.stdout.readline().strip()
+        if token == "":
+            print "ERROR: Please define github.token via git config"
+            sys.exit(-1)
+
+        print "Creating new remote repository '%s'" % remote
+        data = urllib.urlencode({'login': self.username, 'token': token, 'name': remote})
+        try:
+            xml = urllib2.urlopen("http://github.com/api/v2/xml/repos/create", data = data)
+        except:
+            print "ERROR: Wrong token or repository already exists"
+            sys.exit(-1)
+        xml.close()
+
+        cmd = "cd '%s'; git push '%s' master" % (local.replace("'", "\\'"),
+                                          self.github_url(remote).replace("'", "\\'"))
+        print cmd
+        a = subprocess.Popen(cmd, shell = True)
+        a.wait()
+        os.unlink(self.cache)
+        
 
 class SVNList(RepoLister):
     def __init__(self, svn_repo, postfix = "", cache = None):
