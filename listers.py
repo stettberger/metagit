@@ -141,6 +141,8 @@ username: github.com username (can be derived from github.user)
 protocol: used for cloning the repository (choices: ssh/https/git)"""
         # GIThub!!!!
         kwargs['scm'] = 'git'
+        if not 'name' in kwargs or not kwargs['name']:
+            kwargs['name'] = "github"
         
         RepoLister.__init__(self, **kwargs)
         self.username = username
