@@ -6,6 +6,7 @@ from xml.dom.minidom import parse as xml_parse
 
 from policy import *
 from repository import *
+from tools import *
 #
 # Repository Lister Services
 #
@@ -125,8 +126,8 @@ directory: remote directory where the git repos are searched"""
         push_url = "%s:%s" %(self.host,
                              os.path.join(self.directory, remote))
         
-        cmd = "scp -r '%s' '%s'"% (local.replace("'", "\\'"),
-                                   push_url.replace("'", "\\'"))
+        cmd = "scp -r '%s' '%s'"% (esc(local),
+                                   esc(push_url))
         print cmd
         a = subprocess.Popen(cmd, shell = True)
         a.wait()
@@ -206,8 +207,8 @@ Please set the github.token variable via git config"""
             sys.exit(-1)
         xml.close()
 
-        cmd = "cd '%s'; git push '%s' master" % (local.replace("'", "\\'"),
-                                          self.github_url(remote).replace("'", "\\'"))
+        cmd = "cd '%s'; git push '%s' master" % (esc(local),
+                                                 esc(self.github_url(remote)))
         print cmd
         a = subprocess.Popen(cmd, shell = True)
         a.wait()
@@ -237,7 +238,7 @@ postfix: e.g trunk, will be appended to the clone url"""
 
         self.clone_urls = []
         for repo in process.stdout.readlines():
-            repo = repo.replace("/\n", "")
+            repo = esc(repo)
             self.clone_urls.append((repo, os.path.join(os.path.join(self.svn_repo, repo), self.postfix)))
 
 class Gitorious(RepoLister):

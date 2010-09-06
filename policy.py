@@ -30,7 +30,7 @@ that it is only visible on your local machine."""
     def policy_serialize(self):
         ret = ""
         for (regexp, policy) in self.policies[1:]:
-            ret += ".add_policy('%s', '%s')" %(regexp.replace("'", "\\'"),
-                                               policy.replace("'", "\\'"))
+            ret += ".add_policy('%s', '%s')" %(esc(regexp),
+                                               esc(policy))
         return ret
         

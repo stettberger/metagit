@@ -193,7 +193,7 @@ function mm() {
             return
         repos = self._select(args[0], state = [Repository.STATE_EXISTS, Repository.STATE_BARE])
         if len(repos)  == 1:
-            print "cd " + repos[0].local_url.replace("'", "\\'")
+            print "cd " + esc(repos[0].local_url)
         elif len(repos) > 1:
             for r in range(1, len(repos)+1):
                 sys.stderr.write("%d. %s\n" %(r,repos[r-1].local_url))
@@ -205,7 +205,7 @@ function mm() {
             except:
                 return
             if select <= len(repos):
-                print "cd " + repos[select - 1].local_url.replace("'", "\\'")
+                print "cd " + esc(repos[select - 1].local_url)
             else:
                 print "echo Selection out of range"
         else:

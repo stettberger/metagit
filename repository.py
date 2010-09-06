@@ -1,6 +1,7 @@
 import os
 import re
 from policy import PolicyMixin
+from tools import *
 
 class Repository (PolicyMixin):
     """A Repository instance represents exactly one repository"""
@@ -38,7 +39,7 @@ default_policy: defines if the repo can be cloned on all machines ("allow") or n
             m = re.match(".*/([^/]*)$", clone_url)
             if m:
                 # Remove .git / .hg or whatever
-                self.local_url = os.path.join(into, m.group(1).replace(".%s" % scm, ""))
+                self.local_url = os.path.join(into, esc(m.group(1)))
             else:
                 self.local_url = into
         else:
@@ -72,7 +73,7 @@ the repository"""
     def exec_string(self, command, args = []):
         """Produces an shell command for <command> + <args>"""
         # Escape all ' characters
-        args = ["'" + x.replace("'", "\\'") + "'" for x in args]
+        args = ["'" + esc(x) + "'" for x in args]
         return " ".join([self.scm, self.alias(command), self.option(command)] + args)
 
     def clone(self):
@@ -83,17 +84,17 @@ the repository"""
         """A Repository can be serialized"""
         ret = "%s('%s', '%s', default_policy = '%s', scm = '%s')" %( 
             self.__class__.__name__,
-            self.clone_url.replace("'", "\\'"),
-            self.local_url.replace("'", "\\'"),
-            self.policies[0][1],
-            self.scm)
+            esc(self.clone_url),
+            esc(self.local_url),
+            esc(self.policies[0][1]),
+            esc(self.scm))
 
         ret += self.policy_serialize()
 
         for cmd in self.options.keys():
             for option in self.options[cmd]:
-                ret += ".add_option('%s', '%s')" %( cmd.replace("'", "\\'"),
-                                                    option.replace("'", "\\'"))
+                ret += ".add_option('%s', '%s')" %( esc(cmd),
+                                                    esc(option))
         return ret
 
     def status_line(self):
