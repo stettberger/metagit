@@ -11,6 +11,8 @@ class Repository (PolicyMixin):
     STATE_NOT_EXISTS = '-'
     STATE_NO_REPO = 'N'
 
+    states = [STATE_EXISTS, STATE_BARE, STATE_NOT_EXISTS, STATE_NO_REPO]
+
     aliases = {}
 
     def __init__(self, clone_url, local_url = None, into = ".", default_policy = "allow", scm = "git"):

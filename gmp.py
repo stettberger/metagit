@@ -20,7 +20,7 @@ class RepoManager:
     """Manages all repositories and provides the command line interface"""
     sets = {}
     help_commands = {"selector": """A selector is a regexp which is checked against the output of 
-metagit list."""}
+metagit list. (Exception: the states (%s) will filter the corresponding repos)""" %(", ".join(Repository.states))}
 
     def __init__(self):
         self.hostname = getfqdn()
@@ -87,7 +87,11 @@ line interface"""
             self.sets[set_name].append(repo)
 
     def _select(self, selector, state = None):
-        selector = ".*" + selector
+        # If the selector is a state, it will be searched only at the beginning
+        if selector in Repository.states:
+            selector = "^\\" + selector
+        else:
+            selector = ".*" + selector
         repos = []
         for s in self.sets.keys():
             for repo in self.sets[s]:
