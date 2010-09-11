@@ -15,6 +15,8 @@ class Repository (PolicyMixin):
 
     aliases = {}
 
+    homedir = os.path.expanduser("~/")
+
     def __init__(self, clone_url, local_url = None, into = ".", default_policy = "allow", scm = "git"):
         """clone_url: the url which is used to clone the repository
 local_url: to this directory the repository is cloned
@@ -38,7 +40,7 @@ default_policy: defines if the repo can be cloned on all machines ("allow") or n
         # If no local_url is specified, we use the last part of the clone url
         # without the .git
         if local_url == None:
-            m = re.match(".*/([^/]*)$", clone_url)
+            m = re.match(".*/([^/]+?)(\\." + scm + ")?$", clone_url)
             if m:
                 # Remove .git / .hg or whatever
                 self.local_url = os.path.join(into, esc(m.group(1)))
@@ -103,7 +105,11 @@ the repository"""
         sets = ":".join(self.set)
         if sets != "":
             sets = ":" + sets
-        return "%s (%s%s) %s --> %s" % (self.get_state(), self.scm, sets, self.clone_url, self.local_url)
+
+        local = self.local_url
+        if local.startswith(self.homedir):
+            local = "~/" + local[len(self.homedir):]
+        return "%s (%s%s) %s --> %s" % (self.get_state(), self.scm, sets, self.clone_url, local)
 
     def get_state(self):
         """'+' if the repository exists

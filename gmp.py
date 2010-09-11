@@ -90,12 +90,10 @@ line interface"""
         # If the selector is a state, it will be searched only at the beginning
         if selector in Repository.states:
             selector = "^\\" + selector
-        else:
-            selector = ".*" + selector
         repos = []
         for s in self.sets.keys():
             for repo in self.sets[s]:
-                if (selector == ".*all" or re.match(selector, repo.status_line())) \
+                if (selector == "all" or re.search(selector, repo.status_line())) \
                         and repo.check_policy(self.hostname):
                     if not state or repo.get_state() in state:
                         repos.append(repo)
@@ -165,12 +163,10 @@ executes command on all repositories matching the selector
         """metagit sets [regex]
 Prints a detailed overview on the sets which matches the [regex] or all"""
         if len(args) < 1:
-            args = [".*all"]
-        else:
-            args[0] = ".*" + args[0]
+            args = ["all"]
 
         for key in self.sets.keys():
-            if args[0] == ".*all" or re.match(args[0], key):
+            if args[0] == "all" or re.search(args[0], key):
                 print "%s:" % key
                 for repo in self.sets[key]:
                     print "  " + repo.status_line()
