@@ -15,7 +15,7 @@ it so make it fit your needs. For more information on commands try
   
    #+BEGIN_SRC bash  
 $ metagit list metagit
-+ (git:hub) git@github.com:stettberger/metagit.git --> /home/cip/2009/qy03fugy/github/metagit
+ (git:hub) git@github.com:stettberger/metagit.git --> /home/cip/2009/qy03fugy/github/metagit
 $ `metagit cd metagit`
 $ echo $PWD
 /home/cip/2009/qy03fugy/github/metagit
