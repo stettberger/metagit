@@ -9,26 +9,41 @@ it so make it fit your needs. For more information on commands try
 `pydoc gmp' to the python module documentation.
 
 * A example session:
+
+-  List all repositories which match the regex `metagit' and jump there.
+   See metagit help cd for using an shell function to streamline this.
   
-  #+begin_src bash  
+   #+BEGIN_SRC bash  
 $ metagit list metagit
 + (git:hub) git@github.com:stettberger/metagit.git --> /home/cip/2009/qy03fugy/github/metagit
 $ `metagit cd metagit`
 $ echo $PWD
 /home/cip/2009/qy03fugy/github/metagit
-#+end_src
+#+END_SRC
 
-  #+begin_src bash
+-  Execute a command on all repositories which matches the regex
+  `metagit' (here just one repo)
+
+   #+BEGIN_SRC bash
 $ metagit foreach metagit commit -a
 cd /home/stettberger/github/metagit; git commit  -a
 [master d6cb963] removed metagit on peer
  1 files changed, 0 insertions(+), 1 deletions(-)
-#+end_src
+#+END_SRC
 
-  #+begin_src bash
+-  Shortcuts for the foreach command for common tasks.
+
+   #+BEGIN_SRC bash
 $ metagit push metagit
 [... push ...]
-#+end_src
+#+END_SRC
+
+- Uploading new repositories to remote sites with only one command
+  Hint: Set the github.token config in git for uploading to github
+#+BEGIN_SRC bash
+$ metagit upload github brand-new-project
+[.. creating and pushing brand-new-project ..]
+#+END_SRC
 
 * Features
   - SSHDir Listing - find repos on a remote machine
