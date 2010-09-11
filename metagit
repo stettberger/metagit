@@ -1,60 +1,20 @@
 #!/usr/bin/env python
 
-# Import everything from the work module
-from gmp import *
+import imp, os
 
-# A list with plain repositories, these repos are added manually
-peer_repos = []
-peer_repos.append(Repository("peer.zerties.org:config", "~/"))
-peer_repos.extend(SSHDir("stettberger@peer.zerties.org", "git", cache="~/.metagit-sshdir-peer", name="peer") \
-                     .into("~/git/") \
-                     .add_policy("peer.zerties.org", "deny"))
+# git meta project: gmp
+import gmp
 
-# To import a SVN Repository with git svn just use SVNRepository, instead of Repository
-# peer_repos.append(SVNRepository("file:///tmp/svn/fooo", "/tmp/testerl"))
+# Load the configuration file
+config = imp.load_source("config", os.path.expanduser("~/.metagitrc"))
 
-# A SSHDir Repository grabber. SSHDir executes a find command in the
-# "u" directory at the given ssh handle, and returns a list of
-# repositories where all the remote handles are put into the "~/uni/" directory
-uni_repos = []
-uni_repos.extend(SSHDir("qy03fugy@cip", "u", cache="~/.metagit-sshdir", name = "cip") \
-                     .into("~/uni/") \
-                     .add_policy("informatik.uni-erlangen.de", "deny"))
+# Initialize a new repo manager
+manager = gmp.RepoManager()
 
+# Get all repository sets
+for set_name in filter(lambda x: x.endswith("_repos"), dir(config)):
+    manager.add_set(set_name[:-6], getattr(config, set_name))
 
-# We need an instance of the Repository manager
-r = RepoManager()
-
-# Add a few sets
-r.add_set("uni", uni_repos)
-r.add_set("peer", peer_repos)
-
-# We can also add all repos of a given User at github to a set
-r.add_set("hub", Github("stettberger", cache="~/.metagit-github").into("~/github"))
-r.add_set("hub", Gitorious("stettberger", cache="~/.metagit-gitorious").into("~/github"))
-
-# We can also list all svn repositories within a svn path
-r.add_set("wohnheim", SVNList("svn+ssh://stettberger@hypnos.hofmann.stw.uni-erlangen.de/admin/svn", 
-                              postfix = "trunk", cache = "~/.metagit-wohnheim-svn",
-                              default_policy = "deny")\
-              .into("~/svn/")\
-              .add_policy("faui4", "allow"))
-
-
-# I4
-def i4(repo, path):
-    return SVNRepository("https://www4.informatik.uni-erlangen.de:8088/i4svn/%s" % repo, \
-                         path, default_policy="deny") \
-                         .add_policy("faui4", "allow")
-
-r.add_set("i4", [i4("papers/trunk/11/eurosys-life", "~/eurosys-life"),
-                 i4("bib/trunk", "~/i4-bib"),
-                 i4("wclr/vamos/trunk/life-data", "~/life-data")])
-
-# Example mercurial Repository
-r.add_set("hg", [Repository("http://selenic.com/repo/hello", "/tmp/hg-hello", scm = 'hg')])
-
-# Start the command line interface
-r()
-
+# Run the command line interface
+manager()
 
