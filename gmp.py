@@ -127,7 +127,7 @@ clone all repositories available on this host, if no selector given, clone all""
                 os.makedirs(directory)
             if os.path.exists(repo.local_url):
                 continue
-            repo.clone()
+            repo.execute("clone", [repo.clone_url, repo.local_url])
 
     def _shortcut(self, args):
         if len(args) == 0:
@@ -152,11 +152,7 @@ executes command on all repositories matching the selector
         for repo in repos:
             if not repo.get_state() in [SCM.STATE_EXISTS, SCM.STATE_BARE]:
                 continue
-            os.chdir(repo.local_url)
-            command = repo.exec_string(args[1], args[2:])
-            print "cd %s; %s"%(repo.local_url, command)
-            a = subprocess.Popen(command, shell = True)
-            a.wait()
+            repo.execute(args[1], args[2:])
 
     def cmd_sets (self, args):
         """metagit sets [regex]
@@ -184,9 +180,8 @@ Prints a detailed overview on the sets which matches the [regex] or all"""
 For direct use in the shell use this command:
 
 function mm() {
-  $(metagit cd $@)
-}
-"""
+   $(metagit cd $@)
+}"""
         if len(args) == 0:
             print "echo Please specify target repository"
             return
@@ -216,7 +211,7 @@ function mm() {
 
 Does upload an Repository to an remote site which is specified by an 
 RepoLister name (e.g. an SSHDir)
-
+        
 --origin | -o: set the origin remote to this new repository.
 """
 
