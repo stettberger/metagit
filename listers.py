@@ -14,7 +14,7 @@ from tools import *
 class RepoLister (PolicyMixin):
     listers = []
 
-    def __init__(self, cache = None, default_policy = "allow", scm = "git", name = None):
+    def __init__(self, cache = None, default_policy = "allow", scm = Git(), name = None):
         PolicyMixin.__init__(self, default_policy)
 
         RepoLister.listers.append(self)
@@ -108,7 +108,7 @@ directory: remote directory where the git repos are searched"""
         self.clone_urls = []
         for repo in process.stdout.readlines():
             # Finding none bare repositories
-            m = re.match("(.*)/\.%s" % self.scm, repo)
+            m = re.match("(.*)/\.%s" % self.scm.binary, repo)
             if m:
                 self.clone_urls.append(self.host + ":" + m.group(1))
             # Finding bare repositories
@@ -141,7 +141,7 @@ class Github(RepoLister):
 username: github.com username (can be derived from github.user)
 protocol: used for cloning the repository (choices: ssh/https/git)"""
         # GIThub!!!!
-        kwargs['scm'] = 'git'
+        kwargs['scm'] = Git()
         if not 'name' in kwargs or not kwargs['name']:
             kwargs['name'] = "github"
         
@@ -223,13 +223,14 @@ class SVNList(RepoLister):
 svn_repo: e.g svn+ssh://stettberger@barfoo.com/admin
 postfix: e.g trunk, will be appended to the clone url"""
         # This works just with git svn!
-        kwargs['scm'] = 'git'
+        kwargs['scm'] = GitSvn()
         RepoLister.__init__(self, **kwargs)
         self.svn_repo = svn_repo
         self.postfix = postfix
 
     def create_repos(self):
-        return [SVNRepository(url, into = self.local_directory, repo_name = repo) for (repo, url) in self.urls()]
+        return [Repository(url, into = self.local_directory, repo_name = repo,
+                           scm = GitSvn()) for (repo, url) in self.urls()]
 
 
     def get_list(self):
@@ -247,7 +248,7 @@ class Gitorious(RepoLister):
 username: gitorous username
 protocol: used for cloning the repository (choices: ssh/http/git)"""
         # GITorious!!!
-        kwargs['scm'] = 'git'
+        kwargs['scm'] = Git()
         RepoLister.__init__(self, **kwargs)
 
         self.username = username

@@ -10,6 +10,7 @@ from policy import *
 from repository import *
 from listers import *
 from tools import *
+from scm import *
 
 
 #
@@ -20,7 +21,7 @@ class RepoManager:
     """Manages all repositories and provides the command line interface"""
     sets = {}
     help_commands = {"selector": """A selector is a regexp which is checked against the output of 
-metagit list. (Exception: the states (%s) will filter the corresponding repos)""" %(", ".join(Repository.states))}
+metagit list. (Exception: the states (%s) will filter the corresponding repos)""" %(", ".join(SCM.states))}
 
     def __init__(self):
         self.hostname = getfqdn()
@@ -88,7 +89,7 @@ line interface"""
 
     def _select(self, selector, state = None):
         # If the selector is a state, it will be searched only at the beginning
-        if selector in Repository.states:
+        if selector in SCM.states:
             selector = "^\\" + selector
         repos = []
         for s in self.sets.keys():
@@ -126,9 +127,7 @@ clone all repositories available on this host, if no selector given, clone all""
                 os.makedirs(directory)
             if os.path.exists(repo.local_url):
                 continue
-            print repo.clone()
-            a = subprocess.Popen(repo.clone(), shell = True)
-            a.wait()
+            repo.clone()
 
     def _shortcut(self, args):
         if len(args) == 0:
@@ -151,7 +150,7 @@ executes command on all repositories matching the selector
             self.die("Not enough arguments")
         repos = self._select(args[0])
         for repo in repos:
-            if not repo.get_state() in [repo.STATE_EXISTS, repo.STATE_BARE]:
+            if not repo.get_state() in [SCM.STATE_EXISTS, SCM.STATE_BARE]:
                 continue
             os.chdir(repo.local_url)
             command = repo.exec_string(args[1], args[2:])
@@ -191,7 +190,7 @@ function mm() {
         if len(args) == 0:
             print "echo Please specify target repository"
             return
-        repos = self._select(args[0], state = [Repository.STATE_EXISTS, Repository.STATE_BARE])
+        repos = self._select(args[0], state = [SCM.STATE_EXISTS, SCM.STATE_BARE])
         if len(repos)  == 1:
             print "cd " + esc(repos[0].local_url)
         elif len(repos) > 1:

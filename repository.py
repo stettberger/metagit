@@ -2,22 +2,16 @@ import os
 import re
 from policy import PolicyMixin
 from tools import *
+from scm import *
 
 class Repository (PolicyMixin):
     """A Repository instance represents exactly one repository"""
 
-    STATE_EXISTS = '+'
-    STATE_BARE = 'b'
-    STATE_NOT_EXISTS = '-'
-    STATE_NO_REPO = 'N'
-
-    states = [STATE_EXISTS, STATE_BARE, STATE_NOT_EXISTS, STATE_NO_REPO]
-
-    aliases = {}
-
     homedir = os.path.expanduser("~/")
 
-    def __init__(self, clone_url, local_url = None, into = ".", default_policy = "allow", scm = "git"):
+    def __init__(self, clone_url, local_url = None, 
+                 into = ".", default_policy = "allow", 
+                 scm = Git()):
         """clone_url: the url which is used to clone the repository
 local_url: to this directory the repository is cloned
 into: if local_url is null, the repository is cloned into the <into> directory, and the 
@@ -27,8 +21,6 @@ default_policy: defines if the repo can be cloned on all machines ("allow") or n
 
         PolicyMixin.__init__(self, default_policy)
 
-        # Git options is a hash from git-<command> to a list of options
-        self.options = {}
 
         # Save what kind of source control we use
         self.scm = scm
@@ -40,7 +32,7 @@ default_policy: defines if the repo can be cloned on all machines ("allow") or n
         # If no local_url is specified, we use the last part of the clone url
         # without the .git
         if local_url == None:
-            m = re.match(".*/([^/]+?)(\\." + scm + ")?$", clone_url)
+            m = re.match(".*/([^/]+?)(\\." + scm.binary + ")?$", clone_url)
             if m:
                 # Remove .git / .hg or whatever
                 self.local_url = os.path.join(into, esc(m.group(1)))
@@ -54,52 +46,19 @@ default_policy: defines if the repo can be cloned on all machines ("allow") or n
         self.local_url = os.path.expanduser(self.local_url)
 
 
-        
-    def add_option(self, command, option):
-        """Adds generic options for a git <command> for this repository
-e.g add_git_option("status", "-s") will always add the -s if you `metagit status'
-the repository"""
-        if not command in self.options:
-            self.options[command] = []
-        if isinstance(option, (list,tuple)):
-            self.options[command].extend(option)
-        else:
-            self.options[command].append(option)
-
-        return self
-
-    def option(self, command):
-        """Get all git_options() for a specific command. (See add_option)"""
-        if not command in self.options:
-            return ""
-        return " ".join(self.options[command])
-
-    def exec_string(self, command, args = []):
-        """Produces an shell command for <command> + <args>"""
-        # Escape all ' characters
-        args = ["'" + esc(x) + "'" for x in args]
-        return " ".join([self.scm, self.alias(command), self.option(command)] + args)
-
-    def clone(self):
-        """Returns a git clone command as a string"""
-        return self.exec_string("clone", [self.clone_url, self.local_url])
-
     def __str__(self):
         """A Repository can be serialized"""
-        ret = "%s('%s', '%s', default_policy = '%s', scm = '%s')" %( 
+        ret = "%s('%s', '%s', default_policy = '%s', scm = %s)" %( 
             self.__class__.__name__,
             esc(self.clone_url),
             esc(self.local_url),
             esc(self.policies[0][1]),
-            esc(self.scm))
+            str(self.scm))
 
         ret += self.policy_serialize()
 
-        for cmd in self.options.keys():
-            for option in self.options[cmd]:
-                ret += ".add_option('%s', '%s')" %( esc(cmd),
-                                                    esc(option))
         return ret
+
 
     def status_line(self):
         sets = ":".join(self.set)
@@ -109,36 +68,29 @@ the repository"""
         local = self.local_url
         if local.startswith(self.homedir):
             local = "~/" + local[len(self.homedir):]
-        return "%s (%s%s) %s --> %s" % (self.get_state(), self.scm, sets, self.clone_url, local)
+        return "%s (%s%s) %s --> %s" % (self.get_state(), 
+                                        self.scm.name, sets, 
+                                        self.clone_url, local)
 
+
+    #
+    # Thin Wrappers for the underlying scm implementation
+    #
     def get_state(self):
-        """'+' if the repository exists
-'N' if the destination directory exists but isn't a git repo
-'-' if the destination doesn't exists"""
-        if os.path.exists(os.path.join(self.local_url, "." + self.scm)):
-            return self.STATE_EXISTS
-        elif os.path.exists(os.path.join(self.local_url, "refs")):
-            return self.STATE_BARE
-        elif os.path.exists(self.local_url):
-            return self.STATE_NO_REPO
-        else:
-            return self.STATE_NOT_EXISTS
+        return self.scm.get_state(self.local_url)
 
-    def alias(self, command):
-        """Lookup the command in the self.aliases and replace it if neccessary"""
-        if command in self.aliases:
-            return self.aliases[command]
-        return command
+    def clone(self):
+        """Call the approptiate scm.clone()"""
+        return self.scm.clone(self.clone_url, self.local_url)
 
-class SVNRepository(Repository):
-    """This Repository type replaces push/clone/pull with the git svn 
-commands dcommit/clone/rebase, here only hg is permitted"""
-    aliases = {"push": "svn dcommit",
-               "clone": "svn clone",
-               "pull": "svn rebase"}
-    def __init__(self, clone_url, local_url = None, into = ".",  repo_name = None, **kwargs):
-        if not local_url:
-            local_url = os.path.join(into, repo_name)
-        kwargs['scm'] = 'git'
-        Repository.__init__(self, clone_url, local_url, into, **kwargs)
+    def push(self):
+        """Call the appropriate scm.push()"""
+        return self.scm.push(self.local_url)
 
+    def pull(self):
+        """Call the appropriate scm.pull()"""
+        return self.scm.pull(self.local_url)
+
+    def fetch(self):
+        """Call the appropriate scm.fetch()"""
+        return self.scm.fetch(self.local_url)
