@@ -229,7 +229,8 @@ postfix: e.g trunk, will be appended to the clone url"""
         self.postfix = postfix
 
     def create_repos(self):
-        return [Repository(url, into = self.local_directory, repo_name = repo,
+        print self.urls()
+        return [Repository(url, os.path.join(self.local_directory, repo),
                            scm = GitSvn()) for (repo, url) in self.urls()]
 
 
@@ -239,7 +240,7 @@ postfix: e.g trunk, will be appended to the clone url"""
 
         self.clone_urls = []
         for repo in process.stdout.readlines():
-            repo = esc(repo)
+            repo = esc(repo.strip())
             self.clone_urls.append((repo, os.path.join(os.path.join(self.svn_repo, repo), self.postfix)))
 
 class Gitorious(RepoLister):
