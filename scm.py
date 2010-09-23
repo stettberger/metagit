@@ -146,10 +146,6 @@ class GitSvn(Git):
 
     name = "git-svn"
 
-    EXTERNAL_CLONE = 1
-    EXTERNAL_PULL  = 2
-    EXTERNAL_PUSH  = 3
-    
     def __init__(self, externals = []):
         Git.__init__(self)
         self.externals = externals
@@ -161,9 +157,15 @@ class GitSvn(Git):
                                    stdout = subprocess.PIPE)
         externals = [ x.strip().split(" ") for x in process.stdout.readlines() if x != "\n" ]
         process.wait()
-        print externals
         return externals
 
+
+    def execute(self, command, args, destdir = None):
+        Git.execute(self, command,args = args, destdir = destdir)
+        if command in self.externals:
+            for [path, clone_url] in self.__externals(destdir):
+                Git.execute(self, command, args = args,
+                                  destdir = os.path.join(destdir, path))
 
     def clone(self, args, destdir = None):
         # Call the actual git svn clone (with aliases!)
@@ -173,32 +175,14 @@ class GitSvn(Git):
         fd = open(os.path.join(destdir, ".git/info/exclude"), "a+")
         fd.write("\n# Metagit svn external excludes\n")
         
-        if self.EXTERNAL_CLONE in self.externals:
+        if "clone" in self.externals:
             for [path, clone_url] in self.__externals(destdir):
                 local_url = os.path.join(destdir, path)
                 fd.write(path + "/\n")
                 self.bare_execute("clone", args = [clone_url, local_url])
 
-    def pull(self, args, destdir = None):
-        self.bare_execute("pull", args = args, destdir = destdir)
-        if self.EXTERNAL_PULL in self.externals:
-            for [path, clone_url] in self.__externals(destdir):
-                self.bare_execute("pull", args = args,
-                                  destdir = os.path.join(destdir, path))
-
-    def push(self, args, destdir = None):
-        self.bare_execute("push", args = args, destdir = destdir)
-        if self.EXTERNAL_PUSH in self.externals:
-            for [path, clone_url] in self.__externals(destdir):
-                self.bare_execute("push", args = args,
-                                  destdir = os.path.join(destdir, path))
-
-
-        
 git_svn = gitsvn = GitSvn()
-git_svn_externals = gitsvn_externals = GitSvn(externals = [GitSvn.EXTERNAL_CLONE,
-                                                           GitSvn.EXTERNAL_PULL,
-                                                           GitSvn.EXTERNAL_PUSH])
+git_svn_externals = gitsvn_externals = GitSvn(externals = ["clone", "pull", "push"])
 
 class Mercurial(SCM):
     name = "hg"
