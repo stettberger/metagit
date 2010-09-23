@@ -161,6 +161,7 @@ class GitSvn(Git):
 
 
     def execute(self, command, args, destdir = None):
+        """Call execute for every external, if this command is in the externals attribute"""
         Git.execute(self, command,args = args, destdir = destdir)
         if command in self.externals:
             for [path, clone_url] in self.__externals(destdir):

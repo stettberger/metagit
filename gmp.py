@@ -94,6 +94,11 @@ line interface"""
         repos = []
         for s in self.sets.keys():
             for repo in self.sets[s]:
+                if os.path.exists(repo.local_url) \
+                   and os.path.exists(selector) \
+                   and os.path.samefile(selector, repo.local_url):
+                    print repo.local_url
+                    return [repo]
                 if (selector == "all" or re.search(selector, repo.status_line())) \
                         and repo.check_policy(self.hostname):
                     if not state or repo.get_state() in state:
