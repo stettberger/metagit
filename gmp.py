@@ -97,7 +97,6 @@ line interface"""
                 if os.path.exists(repo.local_url) \
                    and os.path.exists(selector) \
                    and os.path.samefile(selector, repo.local_url):
-                    print repo.local_url
                     return [repo]
                 if (selector == "all" or re.search(selector, repo.status_line())) \
                         and repo.check_policy(self.hostname):
