@@ -229,7 +229,6 @@ postfix: e.g trunk, will be appended to the clone url"""
         self.postfix = postfix
 
     def create_repos(self):
-        print self.urls()
         return [Repository(url, os.path.join(self.local_directory, repo),
                            scm = GitSvn()) for (repo, url) in self.urls()]
 

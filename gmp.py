@@ -129,9 +129,9 @@ clone all repositories available on this host, if no selector given, clone all""
             if not os.path.exists(directory):
                 print("mkdir -p " + directory)
                 os.makedirs(directory)
-                if os.path.exists(repo.local_url):
-                    continue
-                repo.execute("clone", [repo.clone_url, repo.local_url])
+            if os.path.exists(repo.local_url):
+                continue
+            repo.execute("clone", [repo.clone_url, repo.local_url])
 
     def _shortcut(self, args):
         if len(args) == 0:
