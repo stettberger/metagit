@@ -79,9 +79,9 @@ class SCM:
         if command in dir(self):
             getattr(self, command)(args = args, destdir = destdir)
             return
-        self.__execute(command, args, destdir)
+        self.bare_execute(command, args, destdir)
 
-    def __execute(self, command, args = [], destdir = None):
+    def bare_execute(self, command, args = [], destdir = None):
         """Prints the command to stdout and executes it within a shell
         context. Everything will be fine escaped"""
         command = self.__exec_string(command, args)
@@ -127,13 +127,14 @@ class SCM:
         [remote_repo, local_repo] = args
         """Calling this method will clone the remote_repo
         to the local url. This method will execute the command"""
-        return self.__execute("clone", [remote_repo, local_repo])        
+        return self.bare_execute("clone", [remote_repo, local_repo])        
         
 class Git(SCM):
     binary = "git"
     name = "git"
     def __init__(self):
         SCM.__init__(self)
+
 git = Git()
 
 class GitSvn(Git):
@@ -144,9 +145,44 @@ class GitSvn(Git):
                "pull": "svn rebase"}
 
     name = "git-svn"
-    def __init__(self):
+
+    EXTERNAL_CLONE = 1
+    EXTERNAL_PULL  = 2
+    EXTERNAL_PUSH  = 3
+    
+    def __init__(self, externals = []):
         Git.__init__(self)
+        self.externals = externals
+
+    def __externals(self, destdir):
+        process = subprocess.Popen("cd '%s'; git svn propget svn:externals" % destdir,
+                                   shell = True,
+                                   stderr = subprocess.PIPE,
+                                   stdout = subprocess.PIPE)
+        externals = [ x.strip().split(" ") for x in process.stdout.readlines() if x != "\n" ]
+        process.wait()
+        print externals
+        return externals
+
+
+    def clone(self, args, destdir = None):
+        # Call the actual git svn clone (with aliases!)
+        destdir = args[1]
+        self.bare_execute("clone", args = args)
+        
+        fd = open(os.path.join(destdir, ".git/info/exclude"), "a+")
+        fd.write("\n# Metagit svn external excludes\n")
+        
+        if self.EXTERNAL_CLONE in self.externals:
+            for [path, clone_url] in self.__externals(destdir):
+                local_url = os.path.join(destdir, path)
+                fd.write(path + "/\n")
+                self.bare_execute("clone", args = [clone_url, local_url])
+        
 git_svn = gitsvn = GitSvn()
+git_svn_externals = gitsvn_externals = GitSvn(externals = [GitSvn.EXTERNAL_CLONE,
+                                                           GitSvn.EXTERNAL_PULL,
+                                                           GitSvn.EXTERNAL_PUSH])
 
 class Mercurial(SCM):
     name = "hg"

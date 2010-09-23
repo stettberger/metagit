@@ -83,7 +83,11 @@ default_policy: defines if the repo can be cloned on all machines ("allow") or n
         """Will use the self.<command> function if there is one, or
         otherwise use scm.execute to do it directly"""
         if command in dir(self):
-            getattr(self, command)(args = args)
+            getattr(self, command)(command, args = args)
             return
 
         self.scm.execute(command, args = args, destdir = self.local_url)
+
+    def clone(self, command, args):
+        """Clone must be special, because there is no destdir at this very moment"""
+        self.scm.execute(command, args = args)
