@@ -178,6 +178,22 @@ class GitSvn(Git):
                 local_url = os.path.join(destdir, path)
                 fd.write(path + "/\n")
                 self.bare_execute("clone", args = [clone_url, local_url])
+
+    def pull(self, args, destdir = None):
+        self.bare_execute("pull", args = args, destdir = destdir)
+        if self.EXTERNAL_PULL in self.externals:
+            for [path, clone_url] in self.__externals(destdir):
+                self.bare_execute("pull", args = args,
+                                  destdir = os.path.join(destdir, path))
+
+    def push(self, args, destdir = None):
+        self.bare_execute("push", args = args, destdir = destdir)
+        if self.EXTERNAL_PUSH in self.externals:
+            for [path, clone_url] in self.__externals(destdir):
+                self.bare_execute("push", args = args,
+                                  destdir = os.path.join(destdir, path))
+
+
         
 git_svn = gitsvn = GitSvn()
 git_svn_externals = gitsvn_externals = GitSvn(externals = [GitSvn.EXTERNAL_CLONE,
