@@ -97,13 +97,17 @@ class SCM:
     # All subclasses must be serializable
     # 
     def __str__(self):
-        ret = self.__class__.__name__ + "()"
+        ret = self.__class__.__name__ + self.__str_keyword_arguments__()
 
         for cmd in self.options.keys():
             for option in self.options[cmd]:
                 ret += ".add_option('%s', '%s')" %( esc(cmd),
                                                     esc(option))
         return ret
+
+    def __str_keyword_arguments__(self):
+        """For serializing a scm we also need to print all keyword arguments"""
+        return "()"
 
     def get_state(self, local_url):
         """'+' if the repository exists
@@ -149,6 +153,9 @@ class GitSvn(Git):
     def __init__(self, externals = []):
         Git.__init__(self)
         self.externals = externals
+
+    def __str_keyword_arguments__(self):
+        return "(externals = %s)" % str(self.externals)
 
     def __externals(self, destdir):
         process = subprocess.Popen("cd '%s'; git svn propget svn:externals" % destdir,
