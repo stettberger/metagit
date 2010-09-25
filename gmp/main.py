@@ -6,11 +6,11 @@ import subprocess
 
 
 # Project specify
-from policy import *
-from repository import *
-from listers import *
-from tools import *
-from scm import *
+from gmp.policy import *
+from gmp.repository import *
+from gmp.listers import *
+from gmp.tools import *
+from gmp.scm import *
 
 
 #

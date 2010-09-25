@@ -4,9 +4,9 @@ import re
 import subprocess
 from xml.dom.minidom import parse as xml_parse
 
-from policy import *
-from repository import *
-from tools import *
+from gmp.policy import *
+from gmp.repository import *
+from gmp.tools import *
 #
 # Repository Lister Services
 #
