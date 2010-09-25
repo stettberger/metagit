@@ -92,16 +92,21 @@ line interface"""
         if selector in SCM.states:
             selector = "^\\" + selector
         repos = []
+
         for s in self.sets.keys():
             for repo in self.sets[s]:
-                if os.path.exists(repo.local_url) \
-                   and os.path.exists(selector) \
-                   and os.path.samefile(selector, repo.local_url):
-                    return [repo]
-                if (selector == "all" or re.search(selector, repo.status_line())) \
+                if selector == ".":
+                    if os.path.exists(repo.local_url) and os.path.abspath(os.curdir).startswith(repo.local_url):
+                        repos.append(repo)
+                elif (selector == "all" or re.search(selector, repo.status_line())) \
                         and repo.check_policy(self.hostname):
                     if not state or repo.get_state() in state:
                         repos.append(repo)
+
+        if selector == "." and len(repos) > 0:
+            # Take the closest match
+            repos = [sorted(repos, lambda a, b: len(b.local_url) - len(a.local_url))[0]]
+
         return repos
     
     def cmd_list(self, selector):
