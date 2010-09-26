@@ -14,7 +14,8 @@ from gmp.tools import *
 class RepoLister (PolicyMixin):
     listers = []
 
-    def __init__(self, cache = None, default_policy = "allow", scm = Git(), name = None):
+    def __init__(self, cache = None, default_policy = "allow", scm = Git(), name = None, 
+                 into = "~/"):
         PolicyMixin.__init__(self, default_policy)
 
         RepoLister.listers.append(self)
@@ -25,7 +26,7 @@ class RepoLister (PolicyMixin):
             self.cache = None
 
         self.clone_urls = None
-        self.local_directory = None
+        self.local_directory = into
 
         # Default source control management is git, but can be changed by more specific listers
         self.scm = scm
@@ -73,12 +74,6 @@ class RepoLister (PolicyMixin):
             cache.write("]")
             cache.close()
         return repos.__iter__()
-
-    def into(self, local_directory):
-        """Uses the urls() list to create a list of Repositories, which will be located 
-at <local_directory>/<remote_dir_name>"""
-        self.local_directory = local_directory
-        return self
 
     def can_upload(self):
         """Returns True if the Repository Lister is able to move a repository from local to this site

@@ -25,8 +25,7 @@ peer_repos.extend( SSHDir("stettberger@peer.zerties.org", # SSH Login
                           cache = "~/.metagit-sshdir-peer", 
                           # Name for this repo lister (important for
                           # uploading directories
-                          name = "peer") \
-                       .into("~/git/") # place for clones \
+                          name = "peer", into = "~/git") \
                        .add_policy("peer.zerties.org", "deny")) 
                           # This repository won't be listed on remote server
 
@@ -38,16 +37,18 @@ peer_repos.extend( SSHDir("stettberger@peer.zerties.org", # SSH Login
 # "u" directory at the given ssh handle, and returns a list of
 # repositories where all the remote handles are put into the "~/uni/" directory
 uni_repos = []
-uni_repos.extend( SSHDir("qy03fugy@cip", "u", cache="~/.metagit-sshdir", name = "cip") \
-                      .into("~/uni/") \
+uni_repos.extend( SSHDir("qy03fugy@cip", "u", cache="~/.metagit-sshdir", name = "cip",
+                         into = "~/uni/") \
                       .add_policy("informatik.uni-erlangen.de", "deny"))
 
 # Gitorious & Github repos
 hub_repos = []
 hub_repos.extend( Github("stettberger",
-                         cache="~/.metagit-github").into("~/github") )
-hub_repos.extend( Gitorious("stettberger", 
-                            cache="~/.metagit-gitorious").into("~/github"))
+                         cache="~/.metagit-github",
+                         into = "~/github") )
+hub_repos.extend( Gitorious("stettberger",
+                            cache="~/.metagit-gitorious",
+                            into = "~/github"))
 
 # Here a SVNLister is used to list a remote SVN site and create a set
 # of repositories (git svn!) from it. 
@@ -56,8 +57,8 @@ hub_repos.extend( Gitorious("stettberger",
 wohnheim_repos = []
 wohnheim_repos.extend( SVNList("svn+ssh://stettberger@hypnos.hofmann.stw.uni-erlangen.de/admin/svn", 
                                postfix = "trunk", cache = "~/.metagit-wohnheim-svn",
-                               default_policy = "deny")\
-                           .into("~/svn/")\
+                               default_policy = "deny",
+                               into = "~/svn")\
                            .add_policy("hofmann", "allow"))
 
 # I4 - Informatik Lehrstuhl 4
@@ -67,10 +68,7 @@ def i4(repo, path):
                       path, default_policy="deny",
                       scm = git_svn) \
                       .add_policy("faui4", "allow")
-i4_repos = [i4("papers/trunk/11/eurosys-life", "~/eurosys-life"),
-            i4("bib/trunk", "~/i4-bib"),
-            i4("wclr/vamos/trunk/life-data", "~/life-data")]
-
+i4_repos = [i4("papers/trunk/11/eurosys-life", "~/eurosys-life")]
 
 # Oh and we can of cource also use mercurial as a backend
 hg_repos = [Repository("http://selenic.com/repo/hello", "/tmp/hg-hello", scm = hg)]
