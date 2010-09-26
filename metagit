@@ -3,13 +3,13 @@
 import imp, os
 
 # git meta project: gmp
-import gmp
+import gmp.main
 
 # Load the configuration file
 config = imp.load_source("config", os.path.expanduser("~/.metagitrc"))
 
 # Initialize a new repo manager
-manager = gmp.RepoManager()
+manager = gmp.main.RepoManager()
 
 # Get all repository sets
 for set_name in filter(lambda x: x.endswith("_repos"), dir(config)):

@@ -1,8 +1,8 @@
 import os
 import re
-from policy import PolicyMixin
-from tools import *
-from scm import *
+from gmp.policy import PolicyMixin
+from gmp.tools import *
+from gmp.scm import *
 
 class Repository (PolicyMixin):
     """A Repository instance represents exactly one repository"""
