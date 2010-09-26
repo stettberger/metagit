@@ -86,7 +86,7 @@ class SCM:
         """Prints the command to stdout and executes it within a shell
         context. Everything will be fine escaped"""
         command = self.__exec_string(command, args)
-        parallel = Options.get(["-p", "--parallel"]) != None
+        parallel = Options.opt("parallel")
 
         # Maybe we have to change the directory first
         if destdir:

@@ -3,8 +3,7 @@ from socket import getfqdn
 import re
 import sys
 import subprocess
-import getopt
-
+import optparse
 
 # Project specify
 from gmp.policy import *
@@ -13,7 +12,6 @@ from gmp.listers import *
 from gmp.tools import *
 from gmp.scm import *
 
-
 #
 # The Repository manager
 #
@@ -21,8 +19,6 @@ from gmp.scm import *
 class RepoManager:
     """Manages all repositories and provides the command line interface"""
     sets = {}
-    help_commands = {"selector": """A selector is a regexp which is checked against the output of 
-metagit list. (Exception: the states (%s) will filter the corresponding repos)""" %(", ".join(SCM.states))}
 
     def __init__(self):
         self.hostname = getfqdn()
@@ -35,10 +31,9 @@ metagit list. (Exception: the states (%s) will filter the corresponding repos)""
                          "push" : self.shortcut("push"),
                          "pull" : self.shortcut("pull"),
                          "fetch" : self.shortcut("fetch"),
-                         "sets"  : self.cmd_sets,
+                         "diff" : self.shortcut("diff"),
                          "cd"    : self.cmd_cd,
-                         "clean" : self.cmd_clean,
-                         "help" : self.cmd_help}
+                         "clean" : self.cmd_clean}
 
         # Translation table for short commands
         # FIXME: not documentated anywhere
@@ -47,17 +42,11 @@ metagit list. (Exception: the states (%s) will filter the corresponding repos)""
     def __call__(self):
         """The Reposity Manager can be called in order to start the command
 line interface"""
-        args = sys.argv[1:]
+
+        args = Options.parse(sys.argv[1:], self)
         if len(args) < 1:
-            self.die("Too less arguments")
-
-
-        options = []
-        while len(args) > 0 and args[0][0] == "-":
-            options.append(args[0])
-            del args[0]
-            
-        Options.options, _ = getopt.getopt(options, "p", ["parallel"])
+            Options.instance.parser.print_help()
+            return
 
         # Use prefixing to do short commands
         short = [x for x in self.commands.keys() if x.startswith(args[0])]
@@ -70,16 +59,30 @@ line interface"""
         else:
             self.die("Command not found: " + args[0])
 
+    def generate_help(self):
+        """Generate Command: section of --help"""
+        text = """Selector:
+  A selector is a regexp which is checked against the output of metagit
+  list. (Exception: states (%s), current repository (.).
+
+Commands:
+""" %(", ".join(SCM.states))
+        # Find longest command
+        length = max( [ len(x) for x in self.commands.keys() ] )
+        format = "  %" + str(length) + "s  %s\n"
+        for cmd in sorted(self.commands.keys()):
+            cmd_help = self.commands[cmd].__doc__.split("\n")
+            text += format % (cmd, cmd_help[0])
+            for line in cmd_help[1:]:
+                text += format %("", line)
+
+        return text
+
+
+    # use the die method from parser
     def die(self, msg):
-        print msg
-        print
-        print "For more Info: metagit help <something>"
-        print "  `metagit help all' for help to everything"
-        print
-        print "Commands: " + ", ".join(self.commands.keys())
-        print "Topics: " + ", ".join(self.help_commands.keys())
-        
-        sys.exit(-1)
+        """Print message and die"""
+        Options.instance.parser.error(msg)
 
 
     def add_set(self, set_name, repo_list):
@@ -118,12 +121,7 @@ line interface"""
         return repos
     
     def cmd_list(self, selector):
-        """Lists all repositories, which matches the selector. If no selector given 
-list all repositories. See help selector for help with selectors.
-
-metagit list == metagit list all
-
-usage: metagit list <selector>"""
+        """[selector] - lists only matching repos"""
         if len(selector) == 0:
             selector = ["all"]
         repos = self._select(selector[0])
@@ -131,8 +129,7 @@ usage: metagit list <selector>"""
             print repo.status_line()
         
     def cmd_clone(self, selector):
-        """metagit clone [selector]
-clone all repositories available on this host, if no selector given, clone all"""
+        """[selector] - clones all matching repos"""
         if len(selector) == 0:
             selector = ["all"]
 
@@ -153,16 +150,14 @@ clone all repositories available on this host, if no selector given, clone all""
 
     def shortcut(self, command, help = None):
         if not help:
-            help = "alias %s <selector> = foreach <selector> %s" %(command, command)
+            help = "[selector] - executes <scm> %s on repositories" %(command,)
             func = lambda x: self.cmd_foreach([self._shortcut(x)[0], command] + self._shortcut(x)[1:])
         func.__doc__ = help
         return func
 
     def cmd_foreach(self, args):
-        """metagit foreach <selector> <command>
-executes command on all repositories matching the selector
-
-`help selector' for more information on selectors"""
+        """<selector> <command>
+executes `<scm> <command>' on matching repositories"""
         if len(args) < 2:
             self.die("Not enough arguments")
         repos = self._select(args[0])
@@ -180,20 +175,8 @@ executes command on all repositories matching the selector
             if "wait" in dir(p):
                 p.wait()
 
-    def cmd_sets (self, args):
-        """metagit sets [regex]
-Prints a detailed overview on the sets which matches the [regex] or all"""
-        if len(args) < 1:
-            args = ["all"]
-
-        for key in self.sets.keys():
-            if args[0] == "all" or re.search(args[0], key):
-                print "%s:" % key
-                for repo in self.sets[key]:
-                    print "  " + repo.status_line()
-
     def cmd_clean(self, args):
-        """Deletes all cache files used by RepoListers"""
+        """deletes all repo lister cache files"""
         for lister in RepoLister.listers:
             if lister.cache:
                 try:
@@ -202,12 +185,9 @@ Prints a detailed overview on the sets which matches the [regex] or all"""
                     pass
 
     def cmd_cd(self, args):
-        """Prints a cd commando, which, after executed jumps to the repo
-For direct use in the shell use this command:
-
-function mm() {
-   $(metagit cd $@)
-}"""
+        """[selector] - prints cd command to change to repository
+If more then one repository is selected, a interactive dialog
+will be shown to select from the matching ones"""
         if len(args) == 0:
             print "echo Please specify target repository"
             return
@@ -233,13 +213,9 @@ function mm() {
 
 
     def cmd_upload(self, args):
-        """metagit upload <RepoLister> <LocalRepo> [RemoteRepo]
-
+        """<RepoLister> <LocalRepo> <RemoteRepo>
 Does upload an Repository to an remote site which is specified by an 
-RepoLister name (e.g. an SSHDir)
-        
---origin | -o: set the origin remote to this new repository.
-"""
+RepoLister name (e.g. an SSHDir)"""
 
         origin = False
         for o in ["-o", "--origin"]:
@@ -251,10 +227,7 @@ RepoLister name (e.g. an SSHDir)
         listers_name = map(lambda x: x.name, listers)
 
         if len(args) < 2 or not args[0] in listers_name:
-            self.cmd_help(["upload"])
-            print
-            print "Available RepoListers: " + ", ".join(listers_name)
-            return
+            self.die("Available RepoListers: " + ", ".join(listers_name))
         
         # Find the matching repo lister to the name
         lister = listers[listers_name.index(args[0])] 
@@ -285,26 +258,39 @@ RepoLister name (e.g. an SSHDir)
             a = subprocess.Popen(cmd, shell = True)
             a.wait()
 
-    def cmd_help(self, args):
-        """recursive: see recursive"""
-        if len(args) < 1:
-            self.die("No topic selected")
-        if args[0] == "all":
-            topics = self.commands.keys() + self.help_commands.keys()
-            for t in sorted(topics):
-                self.cmd_help([t])
-                print
-        elif args[0] in self.commands:
-            doc = self.commands[args[0]].__doc__
-            if doc:
-                sys.stdout.write(args[0] + ":")
-                print re.sub("(^|\n)", "\n  ", doc)
-            else:
-                self.die("No help available")
+class CommandHelpFormatter(optparse.IndentedHelpFormatter):
+    """Just returns the epilog without reformatting"""
+    def __init__(self, **kwargs):
+        optparse.IndentedHelpFormatter.__init__(self, **kwargs)        
 
-        elif args[0] in self.help_commands:
-            sys.stdout.write(args[0] + ":")
-            print re.sub("(^|\n)", "\n  ", self.help_commands[args[0]])
+    def format_epilog(self, epilog):
+        if not epilog:
+            return ""
+        return "\n" + epilog
 
-        else:
-            self.die("No help available")
+class Options:
+    """Helper class to store all command line options"""
+    instance = None
+
+    def __init__(self, args, repo_manager):
+        parser = optparse.OptionParser(usage = "usage: %prog [options] <command> [selector] -- [args]",
+                                       epilog = repo_manager.generate_help())
+        parser.add_option("-p", "--parallel", help = "run scm tasks in parallel",
+                          action="store_true", default=False)
+
+        parser.formatter = CommandHelpFormatter()
+        parser.formatter.set_parser(parser)
+
+        self.parser = parser
+        self.options, self.args = self.parser.parse_args(args)
+
+    def parse(args, repo_manager):
+        """Singleton getter with parse call"""
+        if not Options.instance:
+            Options.instance = Options(args, repo_manager)
+        return Options.instance.args
+    parse = staticmethod(parse)
+
+    def opt(name):
+        return getattr(Options.instance.options, name)
+    opt = staticmethod(opt)
