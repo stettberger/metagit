@@ -95,12 +95,7 @@ class SCM:
         if parallel:
             command += " >/dev/null"
 
-        print command
-        a = subprocess.Popen(command, shell = True)
-        
-        # Just wait here if we are not in parallel mode
-        if not parallel:
-            a.wait()
+        a = execute(command)
 
         return [a]
 
