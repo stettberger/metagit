@@ -43,7 +43,13 @@ class RepoLister (PolicyMixin):
         pass
 
     def create_repos(self):
-        return [Repository(url, into = self.local_directory, scm = self.scm) for url in self.urls()]
+        repos = []
+        for url in self.urls():
+            if type(url) in [tuple, list]:
+                repos.append( Repository(url[0], os.path.join(self.local_directory, url[1]), scm = self.scm))
+            else:
+                repos.append( Repository(url, into = self.local_directory, scm = self.scm))
+        return repos
 
     def __iter__(self):
         # Check Policy against own FQDN
@@ -131,7 +137,7 @@ directory: remote directory where the git repos are searched"""
         return Repository(push_url, local, default_policy = self.default_policy, scm = self.scm)
         
 class Github(RepoLister):
-    def __init__(self, username = None, protocol="ssh", **kwargs):
+    def __init__(self, username = None, protocol="ssh", wiki = False, **kwargs):
         """Uses a github account name to get a list of repositories
 username: github.com username (can be derived from github.user)
 protocol: used for cloning the repository (choices: ssh/https/git)"""
@@ -139,6 +145,10 @@ protocol: used for cloning the repository (choices: ssh/https/git)"""
         kwargs['scm'] = Git()
         if not 'name' in kwargs or not kwargs['name']:
             kwargs['name'] = "github"
+
+        self.wiki = wiki
+        if type(wiki) != type(""):
+            self.wiki = "wiki"
         
         RepoLister.__init__(self, **kwargs)
         self.username = username
@@ -163,7 +173,10 @@ protocol: used for cloning the repository (choices: ssh/https/git)"""
         self.clone_urls = []
         for repo in repos:
             name = repo.getElementsByTagName("name")[0].childNodes[0].data
+            wiki = repo.getElementsByTagName("has-wiki")[0].childNodes[0].data == "true"
             self.clone_urls.append(self.github_url(name))
+            if self.wiki and wiki:
+                self.clone_urls.append((self.github_url(name + ".wiki"), name + "/" + self.wiki))
 
     def github_url(self, name):
         url = ""
