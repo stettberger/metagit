@@ -5,8 +5,12 @@ import imp, os
 # git meta project: gmp
 import gmp.main
 
+conffile = "~/.metagitrc"
+if os.getenv("METAGITRC"):
+    conffile = os.getenv("METAGITRC")
+
 # Load the configuration file
-config = imp.load_source("config", os.path.expanduser("~/.metagitrc"))
+config = imp.load_source("config", os.path.expanduser(conffile))
 
 # Initialize a new repo manager
 manager = gmp.main.RepoManager()
