@@ -47,8 +47,8 @@ uni_repos.extend( SSHDir("qy03fugy@cip", "u", cache="~/.metagit-sshdir", name = 
 hub_repos = []
 hub_repos.extend( Github("stettberger",
                          cache="~/.metagit-github",
-                         into ="~/github"))
-hub_repos.extend( Gitorious("stettberger", 
+                         into = "~/github") )
+hub_repos.extend( Gitorious("stettberger",
                             cache="~/.metagit-gitorious",
                             into = "~/github"))
 
@@ -60,7 +60,7 @@ wohnheim_repos = []
 wohnheim_repos.extend( SVNList("svn+ssh://stettberger@hypnos.hofmann.stw.uni-erlangen.de/admin/svn", 
                                postfix = "trunk", cache = "~/.metagit-wohnheim-svn",
                                default_policy = "deny",
-                               into = "~/svn/") \
+                               into = "~/svn")\
                            .add_policy("hofmann", "allow"))
 
 # I4 - Informatik Lehrstuhl 4
@@ -68,12 +68,9 @@ wohnheim_repos.extend( SVNList("svn+ssh://stettberger@hypnos.hofmann.stw.uni-erl
 def i4(repo, path):
     return Repository("https://www4.informatik.uni-erlangen.de:8088/i4svn/%s" % repo, 
                       path, default_policy="deny",
-                      scm = git_svn) \
+                      scm = gitsvn_externals) \
                       .add_policy("faui4", "allow")
-i4_repos = [i4("papers/trunk/11/eurosys-life", "~/eurosys-life"),
-            i4("bib/trunk", "~/i4-bib"),
-            i4("wclr/vamos/trunk/life-data", "~/life-data")]
-
+i4_repos = [i4("papers/trunk/11/eurosys-life", "~/eurosys-life")]
 
 # Oh and we can of cource also use mercurial as a backend
 hg_repos = [Repository("http://selenic.com/repo/hello", "/tmp/hg-hello", scm = hg)]

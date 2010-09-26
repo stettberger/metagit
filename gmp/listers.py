@@ -14,8 +14,8 @@ from gmp.tools import *
 class RepoLister (PolicyMixin):
     listers = []
 
-    def __init__(self, cache = None, default_policy = "allow", scm = Git(), name = None,
-                 into = None):
+    def __init__(self, cache = None, default_policy = "allow", scm = Git(), name = None, 
+                 into = "~/"):
         PolicyMixin.__init__(self, default_policy)
 
         RepoLister.listers.append(self)
@@ -26,9 +26,6 @@ class RepoLister (PolicyMixin):
             self.cache = None
 
         self.clone_urls = None
-
-        if not into:
-            print "WARNING: no default into argument"
         self.local_directory = into
 
         # Default source control management is git, but can be changed by more specific listers
