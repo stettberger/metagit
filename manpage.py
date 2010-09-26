@@ -68,6 +68,12 @@ class build_manpage(Command):
         stream.write(".SH OPTIONS\n%s\n" % self.parser.format_option_help())
         stream.write(self.repo.generate_help(nroff=True) + "\n")
 
+        stream.write(""".SH ENVIRON
+.TP
+.B
+METAGITRC
+use another config file instead of ~/.metagitrc
+""")
         author = '%s <%s>' % (self.distribution.get_author(),
                               self.distribution.get_author_email())
         stream.write('.SH AUTHORS\n.B %s\nwas written by %s.\n'

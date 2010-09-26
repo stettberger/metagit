@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from distutils.core import setup
+from manpage import build_manpage
 
 # The version is the latest git tag
 import subprocess
@@ -14,8 +15,14 @@ setup(
 	author = "Christian Dietrich",
 	author_email = "stettberger@dokucode.de",
     description='managing big amount of git repositories',
+    long_description = """With metagit you can define either scm repositories manually
+by setting their clone url and where to put them or you can use a repository lister,
+which searches on a remote site for repositories and adds them to the list. You can select
+some of the listed repos and execute various scm commands on the in a single step.""",
 	license = "GPLv3",
     url='http://github.com/stettberger/metagit/',
     packages=['gmp'],
-    scripts=['metagit']
+    cmdclass = {'build_manpage': build_manpage},
+    scripts=['metagit'],
+    data_files=[('share/man/man1', ['metagit.1'])]
 )

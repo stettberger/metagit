@@ -59,22 +59,36 @@ line interface"""
         else:
             self.die("Command not found: " + args[0])
 
-    def generate_help(self):
+    def generate_help(self, nroff = False):
         """Generate Command: section of --help"""
-        text = """Selector:
+        
+        if nroff:
+            text = ".SH SELECTOR\n"
+        else:
+            text = "Selector:"
+        
+        text += """
   A selector is a regexp which is checked against the output of metagit
   list. (Exception: states (%s), current repository (.).
 
-Commands:
 """ %(", ".join(SCM.states))
+
         # Find longest command
         length = max( [ len(x) for x in self.commands.keys() ] )
-        format = "  %" + str(length) + "s  %s\n"
+        if nroff:
+            text += ".SH COMMANDS\n"
+            format = ".TP\n.B\n%s\n%s\n"
+        else:
+            format = "  %" + str(length) + "s  %s\n"
+            text += "Commands:\n"
         for cmd in sorted(self.commands.keys()):
             cmd_help = self.commands[cmd].__doc__.split("\n")
             text += format % (cmd, cmd_help[0])
             for line in cmd_help[1:]:
-                text += format %("", line)
+                if nroff:
+                    text += line +"\n"
+                else:
+                    text += format %("", line)
 
         return text
 
@@ -271,14 +285,15 @@ class CommandHelpFormatter(optparse.IndentedHelpFormatter):
 class Options:
     """Helper class to store all command line options"""
     instance = None
+    formatter=CommandHelpFormatter()
 
     def __init__(self, args, repo_manager):
-        parser = optparse.OptionParser(usage = "usage: %prog [options] <command> [selector] -- [args]",
+        parser = optparse.OptionParser(usage = "usage: metagit [options] <command> [selector] -- [args]",
                                        epilog = repo_manager.generate_help())
         parser.add_option("-p", "--parallel", help = "run scm tasks in parallel",
                           action="store_true", default=False)
 
-        parser.formatter = CommandHelpFormatter()
+        parser.formatter = self.formatter
         parser.formatter.set_parser(parser)
 
         self.parser = parser
