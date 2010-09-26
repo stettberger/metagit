@@ -1,5 +1,6 @@
 import subprocess
 import os
+
 from tools import *
 
 class SCM:
@@ -77,21 +78,31 @@ class SCM:
         """Will use the self.<command> function if there is one, or
         otherwise use __execute to do it directly"""
         if command in dir(self):
-            getattr(self, command)(args = args, destdir = destdir)
-            return
-        self.bare_execute(command, args, destdir)
+            return getattr(self, command)(args = args, destdir = destdir)
+
+        return self.bare_execute(command, args, destdir)
 
     def bare_execute(self, command, args = [], destdir = None):
         """Prints the command to stdout and executes it within a shell
         context. Everything will be fine escaped"""
         command = self.__exec_string(command, args)
+        parallel = Options.get(["-p", "--parallel"]) != None
+
         # Maybe we have to change the directory first
         if destdir:
             command = "cd '%s'; %s" %(esc(destdir), command)
+
+        if parallel:
+            command += " >/dev/null"
+
         print command
         a = subprocess.Popen(command, shell = True)
-        a.wait()
-        return a
+        
+        # Just wait here if we are not in parallel mode
+        if not parallel:
+            a.wait()
+
+        return [a]
 
     # 
     # All subclasses must be serializable
@@ -162,16 +173,18 @@ class GitSvn(Git):
 
     def execute(self, command, args, destdir = None):
         """Call execute for every external, if this command is in the externals attribute"""
-        Git.execute(self, command,args = args, destdir = destdir)
+        procs = Git.execute(self, command,args = args, destdir = destdir)
         if command in self.externals:
             for [path, clone_url] in self.__externals(destdir):
-                Git.execute(self, command, args = args,
-                                  destdir = os.path.join(destdir, path))
+                procs.extend( Git.execute(self, command, args = args,
+                                  destdir = os.path.join(destdir, path)))
+        return procs
 
     def clone(self, args, destdir = None):
         # Call the actual git svn clone (with aliases!)
         destdir = args[1]
-        self.bare_execute("clone", args = args)
+        procs = []
+        procs.extend(self.bare_execute("clone", args = args))
         
         fd = open(os.path.join(destdir, ".git/info/exclude"), "a+")
         fd.write("\n# Metagit svn external excludes\n")
@@ -180,7 +193,8 @@ class GitSvn(Git):
             for [path, clone_url] in self.__externals(destdir):
                 local_url = os.path.join(destdir, path)
                 fd.write(path + "/\n")
-                self.bare_execute("clone", args = [clone_url, local_url])
+                procs.extend(self.bare_execute("clone", args = [clone_url, local_url]))
+        return procs
 
 git_svn = gitsvn = GitSvn()
 git_svn_externals = gitsvn_externals = GitSvn(externals = ["clone", "pull", "push"])

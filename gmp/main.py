@@ -3,6 +3,7 @@ from socket import getfqdn
 import re
 import sys
 import subprocess
+import getopt
 
 
 # Project specify
@@ -50,6 +51,13 @@ line interface"""
         if len(args) < 1:
             self.die("Too less arguments")
 
+
+        options = []
+        while len(args) > 0 and args[0][0] == "-":
+            options.append(args[0])
+            del args[0]
+            
+        Options.options, _ = getopt.getopt(options, "p", ["parallel"])
 
         # Use prefixing to do short commands
         short = [x for x in self.commands.keys() if x.startswith(args[0])]
@@ -146,7 +154,7 @@ clone all repositories available on this host, if no selector given, clone all""
     def shortcut(self, command, help = None):
         if not help:
             help = "alias %s <selector> = foreach <selector> %s" %(command, command)
-        func = lambda x: self.cmd_foreach([self._shortcut(x)[0], command] + self._shortcut(x)[1:])
+            func = lambda x: self.cmd_foreach([self._shortcut(x)[0], command] + self._shortcut(x)[1:])
         func.__doc__ = help
         return func
 
@@ -158,10 +166,19 @@ executes command on all repositories matching the selector
         if len(args) < 2:
             self.die("Not enough arguments")
         repos = self._select(args[0])
+
+        processes = []
+
         for repo in repos:
             if not repo.get_state() in [SCM.STATE_EXISTS, SCM.STATE_BARE]:
                 continue
-            repo.execute(args[1], args[2:])
+            # Give arguments to deeper layers and save the resulting processes
+            process_list = repo.execute(args[1], args[2:])
+            processes.extend(process_list)
+
+        for p in processes:
+            if "wait" in dir(p):
+                p.wait()
 
     def cmd_sets (self, args):
         """metagit sets [regex]
