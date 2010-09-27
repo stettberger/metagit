@@ -166,9 +166,22 @@ line interface"""
     def shortcut(self, command, help = None):
         if not help:
             help = "[selector] - executes <scm> %s on repositories" %(command,)
-            func = lambda x: self.cmd_foreach([self._shortcut(x)[0], command] + self._shortcut(x)[1:])
+        func = lambda x: self.cmd_foreach([self._shortcut(x)[0], command] + self._shortcut(x)[1:])
         func.__doc__ = help
         return func
+
+    def register_shortcut(self, shortcut, scm_cmd = None, help = None):
+        if not scm_cmd:
+            scm_cmd = shortcut
+        self.commands[shortcut] = self.shortcut(scm_cmd, help = help)
+
+    def register_command(self, cmd, command, help = None):
+        """Register command as new function for cmd line interface"""
+        if not help:
+            help = "[selector] - executes custom command on every repository"
+        func = lambda x: [command(repo) for repo in self._select(self._shortcut(x)[0])]
+        func.__doc__ = help
+        self.commands[cmd] = func
 
     def cmd_foreach(self, args):
         """<selector> <command>
@@ -275,3 +288,5 @@ RepoLister name (e.g. an SSHDir)"""
             a = subprocess.Popen(cmd, shell = True)
             a.wait()
 
+# Initialize the repo manager, this will be available in .metagitrc
+manager = RepoManager()

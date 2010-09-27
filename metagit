@@ -12,13 +12,10 @@ if os.getenv("METAGITRC"):
 # Load the configuration file
 config = imp.load_source("config", os.path.expanduser(conffile))
 
-# Initialize a new repo manager
-manager = gmp.main.RepoManager()
-
 # Get all repository sets
 for set_name in filter(lambda x: x.endswith("_repos"), dir(config)):
-    manager.add_set(set_name[:-6], getattr(config, set_name))
+    gmp.main.manager.add_set(set_name[:-6], getattr(config, set_name))
 
 # Run the command line interface
-manager()
+gmp.main.manager()
 
