@@ -36,7 +36,14 @@ class ScreenExecutor:
         
 
 def esc(str):
-    return str.replace("'", "\\'")
+    str = str.replace("\\", "\\\\")
+    quote = False
+    for c in " ;&|{}()$":
+        if c in str:
+            quote = True
+    if quote:
+        return "'" + str.replace("'", "\\'") + "'"
+    return str
 
 def execute(cmd):
     if Options.opt('screen'):

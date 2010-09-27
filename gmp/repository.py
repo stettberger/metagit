@@ -35,7 +35,7 @@ default_policy: defines if the repo can be cloned on all machines ("allow") or n
             m = re.match(".*/([^/]+?)(\\." + scm.binary + ")?$", clone_url)
             if m:
                 # Remove .git / .hg or whatever
-                self.local_url = os.path.join(into, esc(m.group(1)))
+                self.local_url = os.path.join(into, m.group(1))
             else:
                 self.local_url = into
         else:
@@ -48,11 +48,11 @@ default_policy: defines if the repo can be cloned on all machines ("allow") or n
 
     def __str__(self):
         """A Repository can be serialized"""
-        ret = "%s('%s', '%s', default_policy = '%s', scm = %s)" %( 
+        ret = "%s(%s, %s, default_policy = %s, scm = %s)" %( 
             self.__class__.__name__,
-            esc(self.clone_url),
-            esc(self.local_url),
-            esc(self.policies[0][1]),
+            repr(self.clone_url),
+            repr(self.local_url),
+            repr(self.policies[0][1]),
             str(self.scm))
 
         ret += self.policy_serialize()

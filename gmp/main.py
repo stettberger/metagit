@@ -156,7 +156,7 @@ line interface"""
                 os.makedirs(directory)
             if os.path.exists(repo.local_url):
                 continue
-            repo.execute("clone", [repo.clone_url, repo.local_url])
+            repo.execute("clone", [repo.clone_url, repo.local_url] + selector[1:])
 
     def _shortcut(self, args):
         if len(args) == 0:
@@ -268,8 +268,9 @@ RepoLister name (e.g. an SSHDir)"""
 
         # Changing the origin remote
         if origin:
-            cmd = "cd '%s'; git remote rm origin; git remote add origin '%s'" \
-                  %(esc(repo.local_url), esc(repo.clone_url))
+            cmd = "cd %s; git remote rm origin; git remote add origin %s" \
+                  %(esc(repo.local_url), 
+                    esc(repo.clone_url))
             print cmd
             a = subprocess.Popen(cmd, shell = True)
             a.wait()

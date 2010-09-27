@@ -1,4 +1,5 @@
 import subprocess
+import re
 import os
 
 from tools import *
@@ -71,7 +72,7 @@ class SCM:
     def __exec_string(self, command, args = []):
         """Produces an shell command for <command> + <args>"""
         # Escape all ' characters
-        args = ["'" + esc(x) + "'" for x in args]
+        args = [esc(x) for x in args]
         return " ".join([self.binary, self.__alias(command),
                          self.__option(command)] + args)
     def execute(self, command, args = [], destdir = None):
@@ -90,7 +91,7 @@ class SCM:
 
         # Maybe we have to change the directory first
         if destdir:
-            command = "cd '%s'; %s" %(esc(destdir), command)
+            command = "cd %s; %s" %(esc(destdir), command)
 
         if parallel:
             command += " >/dev/null"
@@ -107,8 +108,8 @@ class SCM:
 
         for cmd in self.options.keys():
             for option in self.options[cmd]:
-                ret += ".add_option('%s', '%s')" %( esc(cmd),
-                                                    esc(option))
+                ret += ".add_option(%s, %s)" %(repr(cmd),
+                                               repr(option))
         return ret
 
     def __str_keyword_arguments__(self):
@@ -156,46 +157,61 @@ class GitSvn(Git):
 
     name = "git-svn"
 
-    def __init__(self, externals = []):
+    def __init__(self, externals = [], headonly = False):
         Git.__init__(self)
         self.externals = externals
+        self.headonly = headonly
 
     def __str_keyword_arguments__(self):
-        return "(externals = %s)" % str(self.externals)
+        return "(externals = %s, headonly = %s)" % str(self.externals, self.headonly)
 
     def __externals(self, destdir):
-        process = subprocess.Popen("cd '%s'; git svn propget svn:externals" % destdir,
+        process = subprocess.Popen("cd %s; git svn propget svn:externals" % esc(destdir),
                                    shell = True,
                                    stderr = subprocess.PIPE,
                                    stdout = subprocess.PIPE)
-        externals = [ x.strip().split(" ") for x in process.stdout.readlines() if x != "\n" ]
+        externals = [ re.split("\\s+", x.strip()) for x in process.stdout.readlines() 
+                      if x != "\n" ]
         process.wait()
+
         return externals
 
 
     def execute(self, command, args, destdir = None):
         """Call execute for every external, if this command is in the externals attribute"""
+        if command in dir(self):
+            return getattr(self, command)(args = args, destdir = destdir)
+
         procs = Git.execute(self, command,args = args, destdir = destdir)
-        if command in self.externals:
+
+        if self.externals == True or command in self.externals:
             for [path, clone_url] in self.__externals(destdir):
-                procs.extend( Git.execute(self, command, args = args,
+                procs.extend( self.execute(command, args = args,
                                   destdir = os.path.join(destdir, path)))
         return procs
 
     def clone(self, args, destdir = None):
-        # Call the actual git svn clone (with aliases!)
+        # Append -r HEAD to command, so only the top commit is cloned
+        if self.headonly:
+            headonly = ['-r', 'HEAD']
+        else:
+            headonly = []
+
         destdir = args[1]
         procs = []
-        procs.extend(self.bare_execute("clone", args = args))
+        # Call the actual git svn clone (with aliases!)
+        procs.extend(self.bare_execute("clone", args = args + headonly))
         
         fd = open(os.path.join(destdir, ".git/info/exclude"), "a+")
         fd.write("\n# Metagit svn external excludes\n")
         
-        if "clone" in self.externals:
+        if self.externals == True or "clone" in self.externals:
             for [path, clone_url] in self.__externals(destdir):
                 local_url = os.path.join(destdir, path)
                 fd.write(path + "/\n")
-                procs.extend(self.bare_execute("clone", args = [clone_url, local_url]))
+                # Call clone with other clone and local url
+                procs.extend( self.execute("clone", args = [clone_url, local_url] + args[2:],
+                                           destdir = local_url) )
         return procs
 
 git_svn = gitsvn = GitSvn()
