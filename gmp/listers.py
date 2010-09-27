@@ -15,7 +15,7 @@ class RepoLister (PolicyMixin):
     listers = []
 
     def __init__(self, cache = None, default_policy = "allow", scm = Git(), name = None, 
-                 into = "~/"):
+                 into = "~/", **kwargs):
         PolicyMixin.__init__(self, default_policy)
 
         RepoLister.listers.append(self)
@@ -30,6 +30,9 @@ class RepoLister (PolicyMixin):
 
         # Default source control management is git, but can be changed by more specific listers
         self.scm = scm
+
+        # Save all the other arguments, they will be pushed to repository constructors
+        self.kwargs = kwargs
 
         self.name = name
 
@@ -46,9 +49,9 @@ class RepoLister (PolicyMixin):
         repos = []
         for url in self.urls():
             if type(url) in [tuple, list]:
-                repos.append( Repository(url[0], os.path.join(self.local_directory, url[1]), scm = self.scm))
+                repos.append( Repository(url[0], os.path.join(self.local_directory, url[1]), scm = self.scm, **self.kwargs))
             else:
-                repos.append( Repository(url, into = self.local_directory, scm = self.scm))
+                repos.append( Repository(url, into = self.local_directory, scm = self.scm, **self.kwargs))
         return repos
 
     def __iter__(self):
@@ -231,15 +234,11 @@ class SVNList(RepoLister):
 svn_repo: e.g svn+ssh://stettberger@barfoo.com/admin
 postfix: e.g trunk, will be appended to the clone url"""
         # This works just with git svn!
-        kwargs['scm'] = GitSvn()
+        if not 'scm' in kwargs:
+            kwargs['scm'] = GitSvn()
         RepoLister.__init__(self, **kwargs)
         self.svn_repo = svn_repo
         self.postfix = postfix
-
-    def create_repos(self):
-        return [Repository(url, os.path.join(self.local_directory, repo),
-                           scm = GitSvn()) for (repo, url) in self.urls()]
-
 
     def get_list(self):
         process = subprocess.Popen(["svn", "list", self.svn_repo], 
