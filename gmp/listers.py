@@ -247,7 +247,7 @@ postfix: e.g trunk, will be appended to the clone url"""
         self.clone_urls = []
         for repo in process.stdout.readlines():
             repo = repo.strip()
-            self.clone_urls.append((repo, os.path.join(os.path.join(self.svn_repo, repo), self.postfix)))
+            self.clone_urls.append((os.path.join(os.path.join(self.svn_repo, repo), self.postfix), repo))
 
 class Gitorious(RepoLister):
     def __init__(self, username, protocol="ssh", gitorious="gitorious.com", **kwargs):
