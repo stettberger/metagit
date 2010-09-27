@@ -215,7 +215,7 @@ class GitSvn(Git):
         return procs
 
 git_svn = gitsvn = GitSvn()
-git_svn_externals = gitsvn_externals = GitSvn(externals = ["clone", "pull", "push"])
+git_svn_externals = gitsvn_externals = GitSvn(externals = True)
 
 class Mercurial(SCM):
     name = "hg"
