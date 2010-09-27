@@ -163,7 +163,7 @@ class GitSvn(Git):
         self.headonly = headonly
 
     def __str_keyword_arguments__(self):
-        return "(externals = %s, headonly = %s)" % str(self.externals, self.headonly)
+        return "(externals = %s, headonly = %s)" % (repr(self.externals), repr(self.headonly))
 
     def __externals(self, destdir):
         process = subprocess.Popen("cd %s; git svn propget svn:externals" % esc(destdir),
