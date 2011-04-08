@@ -152,11 +152,12 @@ class Git(SCM):
 git = Git()
 
 
-class Eg(SCM):
+class Eg(Git):
+    """This is for the Easy Git wrapper"""
     name = "easygit"
     binary = "eg"
     def __init__(self):
-        SCM.__init__(self)
+        Git.__init__(self)
 
 eg = Eg()
 
