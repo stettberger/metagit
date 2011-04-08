@@ -144,8 +144,8 @@ class SCM:
         return self.bare_execute("clone", [remote_repo, local_repo])
         
 class Git(SCM):
-    binary = "git"
     name = "git"
+    binary = "git"
     def __init__(self):
         SCM.__init__(self)
 
