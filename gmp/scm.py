@@ -138,10 +138,10 @@ class SCM:
     # subclassing. These functions will overide the normal execution function
     #
     def clone(self, args = [], destdir = None):
-        [remote_repo, local_repo] = args
         """Calling this method will clone the remote_repo
         to the local url. This method will execute the command"""
-        return self.bare_execute("clone", [remote_repo, local_repo])        
+        [remote_repo, local_repo] = args
+        return self.bare_execute("clone", [remote_repo, local_repo])
         
 class Git(SCM):
     binary = "git"
