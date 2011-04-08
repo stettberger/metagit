@@ -38,7 +38,7 @@ class RepoLister (PolicyMixin):
 
     def urls(self):
         """Retures a list of clone urls in the SSHDir"""
-        if self.clone_urls == None:
+        if self.clone_urls is None:
             self.get_list()
         return self.clone_urls
 
