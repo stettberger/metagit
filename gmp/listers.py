@@ -105,20 +105,19 @@ directory: remote directory where the git repos are searched"""
 
     def get_list(self):
         process = subprocess.Popen(["ssh", self.host, "find", self.directory, 
-                                    "-maxdepth", "2", "-type", "d"], 
+                                    "-maxdepth", "4", "-type", "d"], 
                                    stdout = subprocess.PIPE,
                                    stderr = subprocess.PIPE)
         process.stderr.close()
         self.clone_urls = []
         for repo in process.stdout.readlines():
             # Finding none bare repositories
-            m = re.match("(.*)/\.%s" % self.scm.binary, repo)
-            if m:
-                self.clone_urls.append(self.host + ":" + m.group(1))
-            # Finding bare repositories
-            m = re.match("(.*)/refs", repo)
-            if m:
-                self.clone_urls.append(self.host + ":" + m.group(1))
+            m = re.match("^(.*)/\.%s$" % self.scm.binary, repo)
+            m = m or re.match("(.*)/refs$", repo)
+            if m and not re.match(".*(svn|logs)/refs", repo) and not re.match(".*\.%s/" % self.scm.binary, repo):
+                remote = m.group(1)
+                local = remote[len(self.directory)+1:]
+                self.clone_urls.append((self.host + ":" + remote, local))
                 
     def can_upload(self):
         """You can upload a repository to a remote site"""
