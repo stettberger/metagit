@@ -75,15 +75,15 @@ class SCM:
         args = [esc(x) for x in args]
         return " ".join([self.binary, self.__alias(command),
                          self.__option(command)] + args)
-    def execute(self, command, args = [], destdir = None):
+    def execute(self, command, args = [], destdir = None, **kwargs):
         """Will use the self.<command> function if there is one, or
         otherwise use __execute to do it directly"""
         if command in dir(self):
-            return getattr(self, command)(args = args, destdir = destdir)
+            return getattr(self, command)(args = args, destdir = destdir, **kwargs)
 
-        return self.bare_execute(command, args, destdir)
+        return self.bare_execute(command, args, destdir, **kwargs)
 
-    def bare_execute(self, command, args = [], destdir = None):
+    def bare_execute(self, command, args = [], destdir = None, echo = True):
         """Prints the command to stdout and executes it within a shell
         context. Everything will be fine escaped"""
         command = self.__exec_string(command, args)
@@ -96,7 +96,7 @@ class SCM:
         if parallel:
             command += " >/dev/null"
 
-        a = execute(command)
+        a = execute(command, echo = echo)
 
         return [a]
 
@@ -138,8 +138,8 @@ class SCM:
         [remote_repo, local_repo] = args
         """Calling this method will clone the remote_repo
         to the local url. This method will execute the command"""
-        return self.bare_execute("clone", [remote_repo, local_repo])        
-        
+        return self.bare_execute("clone", [remote_repo, local_repo])
+
 class Git(SCM):
     binary = "git"
     name = "git"
@@ -157,13 +157,15 @@ class GitSvn(Git):
 
     name = "git-svn"
 
-    def __init__(self, externals = [], headonly = False):
+    def __init__(self, externals = [], headonly = False, limit = None):
         Git.__init__(self)
         self.externals = externals
         self.headonly = headonly
+        self.limit = limit
 
     def __str_keyword_arguments__(self):
-        return "(externals = %s, headonly = %s)" % (repr(self.externals), repr(self.headonly))
+        return "(externals = %s, headonly = %s, limit = %s)" % \
+               (repr(self.externals), repr(self.headonly), repr(self.limit))
 
     def __externals(self, destdir):
         process = subprocess.Popen("cd %s; git svn propget svn:externals" % esc(destdir),
@@ -177,12 +179,12 @@ class GitSvn(Git):
         return externals
 
 
-    def execute(self, command, args, destdir = None):
+    def execute(self, command, args, destdir = None, **kwargs):
         """Call execute for every external, if this command is in the externals attribute"""
         if command in dir(self):
-            return getattr(self, command)(args = args, destdir = destdir)
+            return getattr(self, command)(args = args, destdir = destdir, **kwargs)
 
-        procs = Git.execute(self, command,args = args, destdir = destdir)
+        procs = Git.execute(self, command,args = args, destdir = destdir, **kwargs)
 
         if self.externals == True or command in self.externals:
             for [path, clone_url] in self.__externals(destdir):
@@ -193,14 +195,16 @@ class GitSvn(Git):
     def clone(self, args, destdir = None):
         # Append -r HEAD to command, so only the top commit is cloned
         if self.headonly:
-            headonly = ['-r', 'HEAD']
+            opts = ['-r', 'HEAD']
+        elif self.limit != None:
+            opts = ["--limit", str(self.limit)]
         else:
-            headonly = []
+            opts = []
 
         destdir = args[1]
         procs = []
         # Call the actual git svn clone (with aliases!)
-        procs.extend(self.bare_execute("clone", args = args + headonly))
+        procs.extend(self.bare_execute("clone", args = args + opts))
         
         fd = open(os.path.join(destdir, ".git/info/exclude"), "a+")
         fd.write("\n# Metagit svn external excludes\n")
@@ -216,6 +220,8 @@ class GitSvn(Git):
 
 git_svn = gitsvn = GitSvn()
 git_svn_externals = gitsvn_externals = GitSvn(externals = True)
+
+
 
 class Mercurial(SCM):
     name = "hg"

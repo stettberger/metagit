@@ -45,12 +45,14 @@ def esc(str):
         return "'" + str.replace("'", "\\'") + "'"
     return str
 
-def execute(cmd):
+echo_exec = True
+def execute(cmd, echo=True):
     if Options.opt('screen'):
         ScreenExecutor.push(cmd)
         return
-        
-    print cmd
+
+    if echo:
+        print cmd
     a = subprocess.Popen(cmd, shell = True)
     
     # Just wait here if we are not in parallel mode
