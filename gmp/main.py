@@ -124,7 +124,7 @@ line interface"""
                 if selector == ".":
                     if os.path.exists(repo.local_url) and os.path.abspath(os.curdir).startswith(repo.local_url):
                         repos.append(repo)
-                elif (selector == "all" or re.search(selector, repo.status_line())) \
+                elif (selector == "all" or re.search(selector, repo.status_line(), re.IGNORECASE)) \
                         and repo.check_policy(self.hostname):
                     if not state or repo.get_state() in state:
                         repos.append(repo)
