@@ -12,6 +12,9 @@ class SCM:
     """The scm binary, e.g. "git" """
     binary = None
 
+    """The default metadata directory is .git"""
+    metadata_dir = ".git"
+
     """Aliases for scm command. e.g if defined clone: svn clone, every
     clone command will be replaced by svn clone"""
     aliases = {}
@@ -120,7 +123,7 @@ class SCM:
         """'+' if the repository exists
            'N' if the destination directory exists but isn't a git repo
            '-' if the destination doesn't exists"""
-        if os.path.exists(os.path.join(local_url, "." + self.binary)):
+        if os.path.exists(os.path.join(local_url, self.metadata_dir)):
             return self.STATE_EXISTS
         elif os.path.exists(os.path.join(local_url, "refs")):
             return self.STATE_BARE
@@ -135,18 +138,30 @@ class SCM:
     # subclassing. These functions will overide the normal execution function
     #
     def clone(self, args = [], destdir = None):
-        [remote_repo, local_repo] = args
         """Calling this method will clone the remote_repo
         to the local url. This method will execute the command"""
+
+        [remote_repo, local_repo] = args
         return self.bare_execute("clone", [remote_repo, local_repo])
 
 class Git(SCM):
-    binary = "git"
     name = "git"
+    binary = "git"
     def __init__(self):
         SCM.__init__(self)
 
 git = Git()
+
+
+class Eg(Git):
+    """This is for the Easy Git wrapper"""
+    name = "easygit"
+    binary = "eg"
+    def __init__(self):
+        Git.__init__(self)
+
+eg = Eg()
+
 
 class GitSvn(Git):
     """This Repository type replaces push/clone/pull with the git svn 
@@ -226,6 +241,7 @@ git_svn_externals = gitsvn_externals = GitSvn(externals = True)
 class Mercurial(SCM):
     name = "hg"
     binary = "hg"
+    metadata_dir = ".hg"
     def __init__(self):
         SCM.__init__(self)
 mercurial = hg = Mercurial()

@@ -38,7 +38,7 @@ class RepoLister (PolicyMixin):
 
     def urls(self):
         """Retures a list of clone urls in the SSHDir"""
-        if self.clone_urls == None:
+        if self.clone_urls is None:
             self.get_list()
         return self.clone_urls
 
@@ -138,6 +138,41 @@ directory: remote directory where the git repos are searched"""
 
         return Repository(push_url, local, default_policy = self.default_policy, scm = self.scm)
         
+
+class Gitolite(RepoLister):
+    """With this you can work against a Gitolite server on a remote host"""
+
+    def __init__(self, host, **kwargs):
+        """host: server where gitolite is running"""
+        if not 'scm' in kwargs:
+            kwargs['scm'] = Git()
+        RepoLister.__init__(self, **kwargs)
+        self.host = host
+
+    def get_list(self):
+        process = subprocess.Popen(["ssh", self.host, "expand"],
+                                   stdout = subprocess.PIPE)
+
+        self.clone_urls = []
+        for repo in process.stdout.readlines():
+            repo = repo.strip()
+            #     &R_ &W_	<gitolite>	nosmd
+            m = re.match("^.*\t(.*)$", repo)
+
+            if m:
+                self.clone_urls.append((self.host + ":" + m.group(1) + ".git", m.group(1)))
+
+    def can_upload(self):
+        """You can push a local repository to a gitolite server"""
+        return True
+
+    def upload(self, local, remote):
+        """Pushes a local repository to a gitolite server"""
+
+        print "TODO: Need to setup initial config for pushing to gitolite and then push"
+        sys.exit(-1)
+
+
 class Github(RepoLister):
     def __init__(self, username = None, protocol="ssh", wiki = False, **kwargs):
         """Uses a github account name to get a list of repositories
