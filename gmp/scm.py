@@ -185,11 +185,11 @@ class GitSvn(Git):
     def __externals(self, destdir):
         process = subprocess.Popen("cd %s; git svn propget svn:externals" % esc(destdir),
                                    shell = True,
-                                   stderr = subprocess.PIPE,
                                    stdout = subprocess.PIPE)
+        process.wait()
         externals = [ re.split("\\s+", x.strip()) for x in process.stdout.readlines() 
                       if x != "\n" ]
-        process.wait()
+
 
         return externals
 
@@ -203,8 +203,10 @@ class GitSvn(Git):
 
         if self.externals == True or command in self.externals:
             for [path, clone_url] in self.__externals(destdir):
-                procs.extend( self.execute(command, args = args,
-                                  destdir = os.path.join(destdir, path)))
+                destdir = os.path.join(destdir, path)
+                if os.path.exists(destdir) and os.path.isdir(path):
+                    procs.extend( self.execute(command, args = args,
+                                               destdir = destdir))
         return procs
 
     def clone(self, args, destdir = None):

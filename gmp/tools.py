@@ -54,7 +54,7 @@ def execute(cmd, echo=True):
     if echo:
         print cmd
     a = subprocess.Popen(cmd, shell = True)
-    
+
     # Just wait here if we are not in parallel mode
     if not Options.opt('parallel'):
         a.wait()
