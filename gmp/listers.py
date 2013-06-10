@@ -2,6 +2,7 @@ import os, sys
 import urllib2, urllib
 import re
 import subprocess
+import json
 from xml.dom.minidom import parse as xml_parse
 
 from gmp.policy import *
@@ -205,12 +206,12 @@ protocol: used for cloning the repository (choices: ssh/https/git)"""
         self.protocol = protocol
 
     def get_list(self):
-        xml = urllib2.urlopen("http://github.com/api/v1/xml/%s"%self.username)
-        repos = xml_parse(xml).getElementsByTagName("repository")
+        js = urllib2.urlopen("https://api.github.com/users/%s/repos"%self.username).read()
+        repos = json.loads(js)
         self.clone_urls = []
         for repo in repos:
-            name = repo.getElementsByTagName("name")[0].childNodes[0].data
-            wiki = repo.getElementsByTagName("has-wiki")[0].childNodes[0].data == "true"
+            name = repo["name"]
+            wiki = repo["has_wiki"]
             self.clone_urls.append(self.github_url(name))
             if self.wiki and wiki:
                 self.clone_urls.append((self.github_url(name + ".wiki"), name + "/" + self.wiki))
@@ -284,7 +285,7 @@ postfix: e.g trunk, will be appended to the clone url"""
             self.clone_urls.append((os.path.join(os.path.join(self.svn_repo, repo), self.postfix), repo))
 
 class Gitorious(RepoLister):
-    def __init__(self, username, protocol="ssh", gitorious="gitorious.com", **kwargs):
+    def __init__(self, username, protocol="ssh", gitorious="gitorious.org", **kwargs):
         """Uses a gitorous account name to get a list of repositories
 username: gitorous username
 protocol: used for cloning the repository (choices: ssh/http/git)"""
@@ -297,7 +298,8 @@ protocol: used for cloning the repository (choices: ssh/http/git)"""
         self.gitorious = gitorious
 
     def get_list(self):
-        site = urllib2.urlopen("http://%s/~%s"%(self.gitorious, self.username))
+        print "http://%s/~%s"%(self.gitorious, self.username)
+        site = urllib2.urlopen("https://%s/~%s"%(self.gitorious, self.username))
         lines_to_read = 0
 
         self.clone_urls = []
