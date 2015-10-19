@@ -261,7 +261,7 @@ Please set the github.token variable via git config"""
         os.unlink(self.cache)
 
         return Repository(self.github_url(remote), remote, default_policy = self.default_policy, scm = 'git')
-        
+
 
 class SVNList(RepoLister):
     def __init__(self, svn_repo, postfix = "", **kwargs):
@@ -324,6 +324,39 @@ protocol: used for cloning the repository (choices: ssh/http/git)"""
                     self.clone_urls.append(prefixes[self.protocol] + m.group(1) + ".git")
                 lines_to_read -= 1
 
-        
-                     
-        
+class Gitlab(RepoLister):
+    def __init__(self, host = None, **kwargs):
+        """Uses a gitlab account name to get a list of repositories
+username: gitl username (can be derived from github.user)
+protocol: used for cloning the repository (choices: ssh/https/git)"""
+        # GIThub!!!!
+        kwargs['scm'] = Git()
+        if not 'name' in kwargs or not kwargs['name']:
+            kwargs['name'] = "gitlab"
+
+        RepoLister.__init__(self, **kwargs)
+        cmd = "git config --get gitlab.%s.token" % host
+        process = subprocess.Popen(cmd, shell = True,
+                                   stdout = subprocess.PIPE,
+                                   stderr = subprocess.PIPE)
+        process.stderr.close()
+        token = process.stdout.readline().strip()
+        if token == "":
+            print """ERROR: No gitlab token defined. Please define gitlab.token defined for Github lister, please define github.user
+            via git config or put it into the config file"""
+            sys.exit(-1)
+
+        self.gitlab_token = token
+        self.host = host
+
+    def get_list(self):
+        headers = {"PRIVATE-TOKEN": self.gitlab_token}
+        url = "https://%s/api/v3/projects/owned" % self.host
+        request = urllib2.Request(url, headers=headers)
+        js = urllib2.urlopen(request).read()
+        repos = json.loads(js)
+        self.clone_urls = []
+        for repo in repos:
+            name = repo["name"]
+            ssh_url = repo["ssh_url_to_repo"]
+            self.clone_urls.append((ssh_url, name))
