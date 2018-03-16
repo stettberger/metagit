@@ -157,6 +157,7 @@ line interface"""
             if os.path.exists(repo.local_url):
                 continue
             repo.execute("clone", [repo.clone_url, repo.local_url] + selector[1:])
+            repo.lock()
 
     def _shortcut(self, args):
         if len(args) == 0:
@@ -190,6 +191,10 @@ executes `<scm> <command>' on matching repositories"""
             self.die("Not enough arguments")
         repos = self._select(args[0])
 
+        # Make RW if readonly
+        for repo in repos:
+            repo.unlock()
+
         processes = []
 
         for repo in repos:
@@ -203,6 +208,10 @@ executes `<scm> <command>' on matching repositories"""
             if p and "wait" in dir(p):
                 p.wait()
         ScreenExecutor.execute()
+
+        # Make R/O if readonly
+        for repo in repos:
+            repo.lock()
 
     def cmd_clean(self, args):
         """deletes all repo lister cache files"""

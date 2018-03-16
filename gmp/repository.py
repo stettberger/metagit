@@ -9,14 +9,14 @@ class Repository (PolicyMixin):
 
     homedir = os.path.expanduser("~/")
 
-    def __init__(self, clone_url, local_url = None, 
-                 into = ".", default_policy = "allow", 
-                 scm = Git()):
+    def __init__(self, clone_url, local_url = None,
+                 into = ".", default_policy = "allow",
+                 scm = Git(), read_only=False):
         """clone_url: the url which is used to clone the repository
 local_url: to this directory the repository is cloned
-into: if local_url is null, the repository is cloned into the <into> directory, and the 
+into: if local_url is null, the repository is cloned into the <into> directory, and the
       repository name is appended (without the .git)
-default_policy: defines if the repo can be cloned on all machines ("allow") or not 
+default_policy: defines if the repo can be cloned on all machines ("allow") or not
       ("deny"). See add_policy and check_policy for details"""
 
         PolicyMixin.__init__(self, default_policy)
@@ -45,10 +45,11 @@ default_policy: defines if the repo can be cloned on all machines ("allow") or n
 
         self.local_url = os.path.expanduser(self.local_url)
 
+        self.read_only = read_only
 
     def __str__(self):
         """A Repository can be serialized"""
-        ret = "%s(%s, %s, default_policy = %s, scm = %s)" %( 
+        ret = "%s(%s, %s, default_policy = %s, scm = %s)" %(
             self.__class__.__name__,
             repr(self.clone_url),
             repr(self.local_url),
@@ -68,11 +69,24 @@ default_policy: defines if the repo can be cloned on all machines ("allow") or n
         local = self.local_url
         if local.startswith(self.homedir):
             local = "~/" + local[len(self.homedir):]
-        return "%s (%s%s) %s --> %s" % (self.get_state(), 
-                                        self.scm.name, sets, 
+        return "%s (%s%s) %s --> %s" % (self.get_state(),
+                                        self.scm.name, sets,
                                         self.clone_url, local)
 
+    def unlock(self):
+        """Unlock repository, if it is read_only"""
+        if os.path.exists(self.local_url) and self.read_only:
+            proc = execute(["chmod", "-R", "u+rwX", self.local_url])
+            proc.wait() # We must wait for the readonly
 
+    def lock(self):
+        """Make repository readonly"""
+        if self.read_only:
+            with open(os.path.join(self.local_url, 'README_READONLY.txt'), 'w+') as fd:
+                fd.write("Dies ist eine Read-Only Kopie des Repositories:\n\n  %s\n" %(self.clone_url))
+
+            proc = execute(["chmod", "-R", "a-w", self.local_url])
+            proc.wait()
     #
     # Thin Wrappers for the underlying scm implementation
     #
@@ -83,9 +97,12 @@ default_policy: defines if the repo can be cloned on all machines ("allow") or n
         """Will use the self.<command> function if there is one, or
         otherwise use scm.execute to do it directly"""
         if command in dir(self):
-            return getattr(self, command)(command, args = args, **kwargs)
+            ret = getattr(self, command)(command, args = args, **kwargs)
+        else:
+            ret = self.scm.execute(command, args = args, destdir = self.local_url, **kwargs)
 
-        return self.scm.execute(command, args = args, destdir = self.local_url, **kwargs)
+        return ret
+
 
     def clone(self, command, args):
         """Clone must be special, because there is no destdir at this very moment"""

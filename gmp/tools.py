@@ -18,7 +18,7 @@ class ScreenExecutor:
 
     def push(cmd):
         i = ScreenExecutor.get()
-        i.screen_fd.write("""screen %d sh -c "echo; echo '%s' ; %s; echo Press ENTER;read a"\n""" 
+        i.screen_fd.write("""screen %d sh -c "echo; echo '%s' ; %s; echo Press ENTER;read a"\n"""
                           % (i.counter, cmd.replace("'", "\\\""), cmd))
         i.counter += 1
     push = staticmethod(push)
@@ -30,10 +30,10 @@ class ScreenExecutor:
             i.screen_fd.close()
             a = subprocess.Popen("screen -c %s" % i.screen_path, shell=True)
             a.wait()
-            
+
             os.unlink(i.screen_path)
     execute = staticmethod(execute)
-        
+
 
 def esc(str):
     str = str.replace("\\", "\\\\")
@@ -53,11 +53,9 @@ def execute(cmd, echo=True):
 
     if echo:
         print(cmd)
-    a = subprocess.Popen(cmd, shell = True)
+    a = subprocess.Popen(cmd, shell=(type(cmd) == str))
 
     # Just wait here if we are not in parallel mode
     if not Options.opt('parallel'):
         a.wait()
     return a
-
-
