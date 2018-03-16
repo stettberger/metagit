@@ -50,7 +50,7 @@ line interface"""
             return
 
         # Use prefixing to do short commands
-        short = [x for x in self.commands.keys() if x.startswith(args[0])]
+        short = [x for x in list(self.commands.keys()) if x.startswith(args[0])]
         if len(short) == 1:
             self.commands[short[0]](args[1:])
         elif args[0] in self.short_commands:
@@ -75,7 +75,7 @@ line interface"""
 """ %(", ".join(SCM.states))
 
         # Find longest command
-        length = max( [ len(x) for x in self.commands.keys() ] )
+        length = max( [ len(x) for x in list(self.commands.keys()) ] )
         if nroff:
             text += ".SH COMMANDS\n"
             format = ".TP\n.B\n%s\n%s\n"
@@ -119,7 +119,7 @@ line interface"""
             selector = "^\\" + selector
         repos = []
 
-        for s in self.sets.keys():
+        for s in list(self.sets.keys()):
             for repo in self.sets[s]:
                 if selector == ".":
                     if os.path.exists(repo.local_url) and os.path.abspath(os.curdir).startswith(repo.local_url):
@@ -141,7 +141,7 @@ line interface"""
             selector = ["all"]
         repos = self._select(selector[0])
         for repo in repos:
-            print repo.status_line()
+            print(repo.status_line())
 
     def cmd_clone(self, selector):
         """[selector] - clones all matching repos"""
@@ -152,7 +152,7 @@ line interface"""
         for repo in repos:
             directory = os.path.dirname(repo.local_url)
             if not os.path.exists(directory):
-                print("mkdir -p " + directory)
+                print(("mkdir -p " + directory))
                 os.makedirs(directory)
             if os.path.exists(repo.local_url):
                 continue
@@ -218,11 +218,11 @@ executes `<scm> <command>' on matching repositories"""
 If more then one repository is selected, a interactive dialog
 will be shown to select from the matching ones"""
         if len(args) == 0:
-            print "echo Please specify target repository"
+            print("echo Please specify target repository")
             return
         repos = self._select(args[0], state = [SCM.STATE_EXISTS, SCM.STATE_BARE])
         if len(repos)  == 1:
-            print "cd " + esc(repos[0].local_url)
+            print("cd " + esc(repos[0].local_url))
         elif len(repos) > 1:
             for r in range(1, len(repos)+1):
                 sys.stderr.write("%d. %s\n" %(r,repos[r-1].local_url))
@@ -230,15 +230,15 @@ will be shown to select from the matching ones"""
 
             sys.stderr.write("\nSelect Repository: ")
             try:
-                select = input()
+                select = eval(input())
             except:
                 return
             if select <= len(repos):
-                print "cd " + esc(repos[select - 1].local_url)
+                print("cd " + esc(repos[select - 1].local_url))
             else:
-                print "echo Selection out of range"
+                print("echo Selection out of range")
         else:
-            print "echo No correspongding repository found"
+            print("echo No correspongding repository found")
 
 
     def cmd_upload(self, args):
@@ -252,8 +252,8 @@ RepoLister name (e.g. an SSHDir)"""
                 del args[args.index(o)]
                 origin = True
 
-        listers = filter(lambda x: x.can_upload(), RepoLister.listers)
-        listers_name = map(lambda x: x.name, listers)
+        listers = [x for x in RepoLister.listers if x.can_upload()]
+        listers_name = [x.name for x in listers]
 
         if len(args) < 2 or not args[0] in listers_name:
             self.die("Available RepoListers: " + ", ".join(listers_name))
@@ -262,7 +262,7 @@ RepoLister name (e.g. an SSHDir)"""
         lister = listers[listers_name.index(args[0])]
         local_url = args[1]
         if not os.path.exists(local_url):
-            print "Local Repository doesn't exist"
+            print("Local Repository doesn't exist")
             sys.exit(-1)
 
         if len(args) < 3:
@@ -270,13 +270,13 @@ RepoLister name (e.g. an SSHDir)"""
         else:
             remote_url = args[2]
 
-        print "Uploading '%s' to '%s' on %s" %(local_url, remote_url, lister.name)
+        print("Uploading '%s' to '%s' on %s" %(local_url, remote_url, lister.name))
         sys.stdout.write("Proceed? (Y/n) ")
-        a = raw_input()
+        a = input()
         if a in ["", "y", "Y", "yes"]:
             repo = lister.upload(local_url, remote_url)
         else:
-            print "Aborting."
+            print("Aborting.")
             sys.exit(-1)
 
         # Changing the origin remote
@@ -284,7 +284,7 @@ RepoLister name (e.g. an SSHDir)"""
             cmd = "cd %s; git remote rm origin; git remote add origin %s" \
                   %(esc(repo.local_url),
                     esc(repo.clone_url))
-            print cmd
+            print(cmd)
             a = subprocess.Popen(cmd, shell = True)
             a.wait()
 

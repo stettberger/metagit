@@ -2,7 +2,7 @@ import subprocess
 import re
 import os
 
-from tools import *
+from .tools import *
 
 class SCM:
     """SCM is the abstract base class which implements defines the
@@ -109,7 +109,7 @@ class SCM:
     def __str__(self):
         ret = self.__class__.__name__ + self.__str_keyword_arguments__()
 
-        for cmd in self.options.keys():
+        for cmd in list(self.options.keys()):
             for option in self.options[cmd]:
                 ret += ".add_option(%s, %s)" %(repr(cmd),
                                                repr(option))
@@ -251,6 +251,11 @@ mercurial = hg = Mercurial()
 
 class SVN(SCM):
     name = "svn"
+    aliases = {
+        "pull": "update",
+        "clone": "checkout"
+    }
+
     binary = "svn"
     metadata_dir = ".svn"
     def __init__(self):

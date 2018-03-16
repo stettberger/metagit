@@ -52,7 +52,7 @@ def execute(cmd, echo=True):
         return
 
     if echo:
-        print cmd
+        print(cmd)
     a = subprocess.Popen(cmd, shell = True)
 
     # Just wait here if we are not in parallel mode

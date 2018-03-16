@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # The version is the latest git tag
 import subprocess
@@ -6,7 +6,7 @@ from manpage import build_manpage
 from setuptools import setup
 
 a = subprocess.Popen("git tag | grep '^v' | tail -n 1", shell = True, stdout = subprocess.PIPE)
-version = a.stdout.readline().strip().replace("v", "")
+version = a.stdout.readline().decode().strip().replace("v", "")
 a.wait()
 
 setup(

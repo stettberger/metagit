@@ -1,5 +1,5 @@
 import os, sys
-import urllib2, urllib
+import urllib.request, urllib.error, urllib.parse, urllib.request, urllib.parse, urllib.error
 import re
 import subprocess
 import json
@@ -15,12 +15,12 @@ from gmp.tools import *
 class RepoLister (PolicyMixin):
     listers = []
 
-    def __init__(self, cache = None, default_policy = "allow", scm = Git(), name = None, 
+    def __init__(self, cache = None, default_policy = "allow", scm = Git(), name = None,
                  into = "~/", **kwargs):
         PolicyMixin.__init__(self, default_policy)
 
         RepoLister.listers.append(self)
-        
+
         if cache:
             self.cache = os.path.expanduser(cache)
         else:
@@ -68,12 +68,12 @@ class RepoLister (PolicyMixin):
                     repos = eval(cache.read())
                     cache.close()
                     return repos.__iter__()
-                except Exception, e:
-                    print "WARNING: Invalid cache file: " + self.cache
+                except Exception as e:
+                    print("WARNING: Invalid cache file: " + self.cache)
                     # Disabling Cache
                     self.cache = None
-                    print e
-            
+                    print(e)
+
         # Cache does not exist try to build it
         repos = self.create_repos()
         if self.cache and len (repos) > 0:
@@ -105,8 +105,8 @@ directory: remote directory where the git repos are searched"""
 
 
     def get_list(self):
-        process = subprocess.Popen(["ssh", self.host, "find", self.directory, 
-                                    "-maxdepth", "4", "-type", "d"], 
+        process = subprocess.Popen(["ssh", self.host, "find", self.directory,
+                                    "-maxdepth", "4", "-type", "d"],
                                    stdout = subprocess.PIPE,
                                    stderr = subprocess.PIPE)
         process.stderr.close()
@@ -119,7 +119,7 @@ directory: remote directory where the git repos are searched"""
                 remote = m.group(1)
                 local = remote[len(self.directory)+1:]
                 self.clone_urls.append((self.host + ":" + remote, local))
-                
+
     def can_upload(self):
         """You can upload a repository to a remote site"""
         return True
@@ -129,16 +129,16 @@ directory: remote directory where the git repos are searched"""
 
         push_url = "%s:%s" %(self.host,
                              os.path.join(self.directory, remote))
-        
+
         cmd = "scp -r %s %s"% (esc(local),
                                esc(push_url))
-        print cmd
+        print(cmd)
         a = subprocess.Popen(cmd, shell = True)
         a.wait()
         os.unlink(self.cache)
 
         return Repository(push_url, local, default_policy = self.default_policy, scm = self.scm)
-        
+
 
 class Gitolite(RepoLister):
     """With this you can work against a Gitolite server on a remote host"""
@@ -170,7 +170,7 @@ class Gitolite(RepoLister):
     def upload(self, local, remote):
         """Pushes a local repository to a gitolite server"""
 
-        print "TODO: Need to setup initial config for pushing to gitolite and then push"
+        print("TODO: Need to setup initial config for pushing to gitolite and then push")
         sys.exit(-1)
 
 
@@ -187,7 +187,7 @@ protocol: used for cloning the repository (choices: ssh/https/git)"""
         self.wiki = wiki
         if type(wiki) != type(""):
             self.wiki = "wiki"
-        
+
         RepoLister.__init__(self, **kwargs)
         self.username = username
         if self.username == None:
@@ -196,17 +196,17 @@ protocol: used for cloning the repository (choices: ssh/https/git)"""
                                        stdout = subprocess.PIPE,
                                        stderr = subprocess.PIPE)
             process.stderr.close()
-            username = process.stdout.readline().strip()
+            username = process.stdout.readline().decode().strip()
             if username == "":
-                print """ERROR: No username defined for Github lister, please define github.user
-    via git config or put it into the config file"""
+                print("""ERROR: No username defined for Github lister, please define github.user
+    via git config or put it into the config file""")
                 sys.exit(-1)
             self.username = username
-            
+
         self.protocol = protocol
 
     def get_list(self):
-        js = urllib2.urlopen("https://api.github.com/users/%s/repos"%self.username).read()
+        js = urllib.request.urlopen("https://api.github.com/users/%s/repos"%self.username).read()
         repos = json.loads(js)
         self.clone_urls = []
         for repo in repos:
@@ -225,7 +225,7 @@ protocol: used for cloning the repository (choices: ssh/https/git)"""
         else:
             url = "git://github.com/%s/%s.git" %(self.username, name)
         return url
-        
+
     def can_upload(self):
         """You can upload a repository to a remote site"""
         return True
@@ -234,28 +234,28 @@ protocol: used for cloning the repository (choices: ssh/https/git)"""
         """Creates a new repository at github and pushes the local one to it.
 Please set the github.token variable via git config"""
         cmd = "git config --get github.token"
-        print cmd
+        print(cmd)
         process = subprocess.Popen(cmd, shell = True,
                                    stdout = subprocess.PIPE,
                                    stderr = subprocess.PIPE)
         process.stderr.close()
         token = process.stdout.readline().strip()
         if token == "":
-            print "ERROR: Please define github.token via git config"
+            print("ERROR: Please define github.token via git config")
             sys.exit(-1)
 
-        print "Creating new remote repository '%s'" % remote
-        data = urllib.urlencode({'login': self.username, 'token': token, 'name': remote})
+        print("Creating new remote repository '%s'" % remote)
+        data = urllib.parse.urlencode({'login': self.username, 'token': token, 'name': remote})
         try:
-            xml = urllib2.urlopen("http://github.com/api/v2/xml/repos/create", data = data)
+            xml = urllib.request.urlopen("http://github.com/api/v2/xml/repos/create", data = data)
         except:
-            print "ERROR: Wrong token or repository already exists"
+            print("ERROR: Wrong token or repository already exists")
             sys.exit(-1)
         xml.close()
 
         cmd = "cd %s; git push %s master" % (esc(local),
                                              esc(self.github_url(remote)))
-        print cmd
+        print(cmd)
         a = subprocess.Popen(cmd, shell = True)
         a.wait()
         os.unlink(self.cache)
@@ -276,12 +276,14 @@ postfix: e.g trunk, will be appended to the clone url"""
         self.postfix = postfix
 
     def get_list(self):
-        process = subprocess.Popen(["svn", "list", self.svn_repo], 
+        process = subprocess.Popen(["svn", "list", self.svn_repo],
                                    stdout = subprocess.PIPE)
 
         self.clone_urls = []
         for repo in process.stdout.readlines():
-            repo = repo.strip()
+            repo = repo.decode().strip()
+            if not repo.endswith("/"):
+                continue
             self.clone_urls.append((os.path.join(os.path.join(self.svn_repo, repo), self.postfix), repo))
 
 class Gitorious(RepoLister):
@@ -298,8 +300,8 @@ protocol: used for cloning the repository (choices: ssh/http/git)"""
         self.gitorious = gitorious
 
     def get_list(self):
-        print "http://%s/~%s"%(self.gitorious, self.username)
-        site = urllib2.urlopen("https://%s/~%s"%(self.gitorious, self.username))
+        print("http://%s/~%s"%(self.gitorious, self.username))
+        site = urllib.request.urlopen("https://%s/~%s"%(self.gitorious, self.username))
         lines_to_read = 0
 
         self.clone_urls = []
@@ -308,7 +310,7 @@ protocol: used for cloning the repository (choices: ssh/http/git)"""
                     "git": "git://%s/"%self.gitorious}
 
         if not self.protocol in prefixes:
-            print "Protocol %s not supported by gitorious list plugin" % self.protocol
+            print("Protocol %s not supported by gitorious list plugin" % self.protocol)
             sys.exit(-1)
 
         # FIXME: Find a good API for gitorious cause this frickel
@@ -342,8 +344,8 @@ protocol: used for cloning the repository (choices: ssh/https/git)"""
         process.stderr.close()
         token = process.stdout.readline().strip()
         if token == "":
-            print """ERROR: No gitlab token defined. Please define gitlab.token defined for Github lister, please define github.user
-            via git config or put it into the config file"""
+            print("""ERROR: No gitlab token defined. Please define gitlab.token defined for Github lister, please define github.user
+            via git config or put it into the config file""")
             sys.exit(-1)
 
         self.gitlab_token = token
@@ -352,8 +354,8 @@ protocol: used for cloning the repository (choices: ssh/https/git)"""
     def get_list(self):
         headers = {"PRIVATE-TOKEN": self.gitlab_token}
         url = "https://%s/api/v3/projects/owned" % self.host
-        request = urllib2.Request(url, headers=headers)
-        js = urllib2.urlopen(request).read()
+        request = urllib.request.Request(url, headers=headers)
+        js = urllib.request.urlopen(request).read()
         repos = json.loads(js)
         self.clone_urls = []
         for repo in repos:
