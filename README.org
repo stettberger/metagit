@@ -8,12 +8,16 @@ The configuration is located in the main python skript `metagit'. Edit
 it so make it fit your needs. For more information on commands try
 `pydoc gmp' to the python module documentation.
 
+* Install
+
+  pip3 install https://github.com/stettberger/metagit.git
+
 * A example session:
 
 -  List all repositories which match the regex `metagit' and jump there.
    See metagit help cd for using an shell function to streamline this.
-  
-   #+BEGIN_SRC bash  
+
+   #+BEGIN_SRC bash
 $ metagit list metagit
  (git:hub) git@github.com:stettberger/metagit.git --> /home/cip/2009/qy03fugy/github/metagit
 $ `metagit cd metagit`
@@ -54,5 +58,3 @@ $ metagit upload github brand-new-project
   - SVNList - clone all your svn repositories with git svn
   -  Use different scm system at once
      The default is git, but hg does also work
-
-   

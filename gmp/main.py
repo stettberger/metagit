@@ -190,6 +190,8 @@ executes `<scm> <command>' on matching repositories"""
         if len(args) < 2:
             self.die("Not enough arguments")
         repos = self._select(args[0])
+        repos = [repo for repo in repos
+                 if not repo.get_state() in [SCM.STATE_EXISTS, SCM.STATE_BARE]]
 
         # Make RW if readonly
         for repo in repos:
@@ -198,8 +200,6 @@ executes `<scm> <command>' on matching repositories"""
         processes = []
 
         for repo in repos:
-            if not repo.get_state() in [SCM.STATE_EXISTS, SCM.STATE_BARE]:
-                continue
             # Give arguments to deeper layers and save the resulting processes
             process_list = repo.execute(args[1], args[2:])
             processes.extend(process_list)
