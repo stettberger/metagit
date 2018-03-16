@@ -49,12 +49,13 @@ default_policy: defines if the repo can be cloned on all machines ("allow") or n
 
     def __str__(self):
         """A Repository can be serialized"""
-        ret = "%s(%s, %s, default_policy = %s, scm = %s)" %(
+        ret = "%s(%s, %s, default_policy = %s, scm = %s, read_only=%s)" %(
             self.__class__.__name__,
             repr(self.clone_url),
             repr(self.local_url),
             repr(self.policies[0][1]),
-            str(self.scm))
+            str(self.scm),
+            str(self.read_only))
 
         ret += self.policy_serialize()
 
