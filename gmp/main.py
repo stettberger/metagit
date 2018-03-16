@@ -191,7 +191,7 @@ executes `<scm> <command>' on matching repositories"""
             self.die("Not enough arguments")
         repos = self._select(args[0])
         repos = [repo for repo in repos
-                 if not repo.get_state() in [SCM.STATE_EXISTS, SCM.STATE_BARE]]
+                 if repo.get_state() in [SCM.STATE_EXISTS, SCM.STATE_BARE]]
 
         # Make RW if readonly
         for repo in repos:
