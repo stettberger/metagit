@@ -62,12 +62,12 @@ line interface"""
 
     def generate_help(self, nroff = False):
         """Generate Command: section of --help"""
-        
+
         if nroff:
             text = ".SH SELECTOR\n"
         else:
             text = "Selector:"
-        
+
         text += """
   A selector is a regexp which is checked against the output of metagit
   list. (Exception: states (%s), current repository (.).
@@ -134,7 +134,7 @@ line interface"""
             repos = [sorted(repos, lambda a, b: len(b.local_url) - len(a.local_url))[0]]
 
         return repos
-    
+
     def cmd_list(self, selector):
         """[selector] - lists only matching repos"""
         if len(selector) == 0:
@@ -142,7 +142,7 @@ line interface"""
         repos = self._select(selector[0])
         for repo in repos:
             print repo.status_line()
-        
+
     def cmd_clone(self, selector):
         """[selector] - clones all matching repos"""
         if len(selector) == 0:
@@ -243,7 +243,7 @@ will be shown to select from the matching ones"""
 
     def cmd_upload(self, args):
         """<RepoLister> <LocalRepo> <RemoteRepo>
-Does upload an Repository to an remote site which is specified by an 
+Does upload an Repository to an remote site which is specified by an
 RepoLister name (e.g. an SSHDir)"""
 
         origin = False
@@ -257,9 +257,9 @@ RepoLister name (e.g. an SSHDir)"""
 
         if len(args) < 2 or not args[0] in listers_name:
             self.die("Available RepoListers: " + ", ".join(listers_name))
-        
+
         # Find the matching repo lister to the name
-        lister = listers[listers_name.index(args[0])] 
+        lister = listers[listers_name.index(args[0])]
         local_url = args[1]
         if not os.path.exists(local_url):
             print "Local Repository doesn't exist"
@@ -282,7 +282,7 @@ RepoLister name (e.g. an SSHDir)"""
         # Changing the origin remote
         if origin:
             cmd = "cd %s; git remote rm origin; git remote add origin %s" \
-                  %(esc(repo.local_url), 
+                  %(esc(repo.local_url),
                     esc(repo.clone_url))
             print cmd
             a = subprocess.Popen(cmd, shell = True)

@@ -103,9 +103,9 @@ class SCM:
 
         return [a]
 
-    # 
+    #
     # All subclasses must be serializable
-    # 
+    #
     def __str__(self):
         ret = self.__class__.__name__ + self.__str_keyword_arguments__()
 
@@ -164,7 +164,7 @@ eg = Eg()
 
 
 class GitSvn(Git):
-    """This Repository type replaces push/clone/pull with the git svn 
+    """This Repository type replaces push/clone/pull with the git svn
     commands dcommit/clone/rebase, here only hg is permitted"""
     aliases = {"push": "svn dcommit",
                "clone": "svn clone",
@@ -187,7 +187,7 @@ class GitSvn(Git):
                                    shell = True,
                                    stdout = subprocess.PIPE)
         process.wait()
-        externals = [ re.split("\\s+", x.strip()) for x in process.stdout.readlines() 
+        externals = [ re.split("\\s+", x.strip()) for x in process.stdout.readlines()
                       if x != "\n" ]
 
 
@@ -222,10 +222,10 @@ class GitSvn(Git):
         procs = []
         # Call the actual git svn clone (with aliases!)
         procs.extend(self.bare_execute("clone", args = args + opts))
-        
+
         fd = open(os.path.join(destdir, ".git/info/exclude"), "a+")
         fd.write("\n# Metagit svn external excludes\n")
-        
+
         if self.externals == True or "clone" in self.externals:
             for [path, clone_url] in self.__externals(destdir):
                 local_url = os.path.join(destdir, path)
@@ -247,3 +247,12 @@ class Mercurial(SCM):
     def __init__(self):
         SCM.__init__(self)
 mercurial = hg = Mercurial()
+
+
+class SVN(SCM):
+    name = "svn"
+    binary = "svn"
+    metadata_dir = ".svn"
+    def __init__(self):
+        SCM.__init__(self)
+subversion = svn = SVN()
