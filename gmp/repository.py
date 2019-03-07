@@ -77,7 +77,7 @@ default_policy: defines if the repo can be cloned on all machines ("allow") or n
     def unlock(self):
         """Unlock repository, if it is read_only"""
         if os.path.exists(self.local_url) and self.read_only:
-            proc = execute(["chmod", "-R", "u+rwX", self.local_url])
+            proc = execute([os.environ.get("CHMOD", "chmod"), "-R", "ug+rwX", self.local_url])
             proc.wait() # We must wait for the readonly
 
     def lock(self):
@@ -86,7 +86,7 @@ default_policy: defines if the repo can be cloned on all machines ("allow") or n
             with open(os.path.join(self.local_url, 'README_READONLY.txt'), 'w+') as fd:
                 fd.write("Dies ist eine Read-Only Kopie des Repositories:\n\n  %s\n" %(self.clone_url))
 
-            proc = execute(["chmod", "-R", "a-w", self.local_url])
+            proc = execute([os.environ.get("CHMOD", "chmod"), "-R", "a-w", self.local_url])
             proc.wait()
     #
     # Thin Wrappers for the underlying scm implementation
